@@ -104,15 +104,31 @@ function AdminDashboard({ fetchProducts }) {
               border: `1px solid var(--border-color)`,
               borderRadius: "10px",
               padding: "15px",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.3)"
+              boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+              position: "relative"
             }}>
-              {product.image && (
+              {product.discount > 0 && (
+                <div style={{
+                  position: "absolute",
+                  top: "15px",
+                  right: "15px",
+                  backgroundColor: "#ff4444",
+                  color: "white",
+                  padding: "5px 10px",
+                  borderRadius: "5px",
+                  fontSize: "0.75rem",
+                  fontWeight: "bold"
+                }}>
+                  {product.discount}% OFF
+                </div>
+              )}
+              {(product.image || product.imageUrl) && (
                 <img
-                  src={product.image}
+                  src={product.image || product.imageUrl}
                   alt={product.name}
                   style={{
                     width: "100%",
-                    height: "150px",
+                    height: "180px",
                     objectFit: "cover",
                     borderRadius: "8px",
                     marginBottom: "12px"
@@ -123,14 +139,24 @@ function AdminDashboard({ fetchProducts }) {
                 />
               )}
               <h3 style={{ margin: "10px 0", fontSize: "1rem" }}>{product.name}</h3>
-              <p style={{ 
-                fontSize: "1.1rem", 
-                color: "var(--accent-color)", 
-                fontWeight: "bold",
-                margin: "5px 0"
-              }}>
-                ₹{product.price}
-              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", margin: "5px 0" }}>
+                {product.mrp && (
+                  <span style={{
+                    fontSize: "0.9rem",
+                    color: "#888",
+                    textDecoration: "line-through"
+                  }}>
+                    ₹{product.mrp.toLocaleString()}
+                  </span>
+                )}
+                <span style={{
+                  fontSize: "1.1rem",
+                  color: "var(--accent-color)",
+                  fontWeight: "bold"
+                }}>
+                  ₹{product.sellingPrice?.toLocaleString() || product.price?.toLocaleString()}
+                </span>
+              </div>
               <p style={{ 
                 color: "#ccc", 
                 marginBottom: "12px",

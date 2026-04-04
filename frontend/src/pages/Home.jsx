@@ -6,13 +6,34 @@ function Home({ products, addToCart }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Listen to search changes from Header
+  useEffect(() => {
+    const handleSearchChange = (event) => {
+      setSearchTerm(event.detail);
+      setCurrentPage(1);
+    };
+
+    window.addEventListener('searchChange', handleSearchChange);
+    return () => window.removeEventListener('searchChange', handleSearchChange);
+  }, []);
+
+  const filteredProducts = products.filter(p => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(searchLower) ||
+      (p.description && p.description.toLowerCase().includes(searchLower)) ||
+      (p.category && p.category.toLowerCase().includes(searchLower))
+    );
+  });
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <div style={{ 
@@ -31,83 +52,95 @@ function Home({ products, addToCart }) {
         Welcome to Jayasuriya Crackers 🎆
       </h1>
 
-      <div style={{ 
-        textAlign: "center", 
-        marginBottom: "20px",
-        display: "flex",
-        justifyContent: "center"
-      }}>
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            padding: "12px 20px",
-            width: "90%",
-            maxWidth: "400px",
-            borderRadius: "25px",
-            border: `1px solid var(--border-color)`,
-            backgroundColor: "var(--card-bg)",
-            color: "var(--text-color)",
-            fontSize: "16px"
-          }}
-        />
-      </div>
-
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-        gap: "15px",
-        marginBottom: "30px"
-      }}>
-        {paginatedProducts.map((p) => (
-          <ProductCard key={p._id} product={p} addToCart={addToCart} />
-        ))}
-      </div>
-
-      {totalPages > 1 && (
-        <div style={{ 
+      {searchTerm && (
+        <div style={{
           textAlign: "center",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "10px",
-          flexWrap: "wrap"
+          marginBottom: "20px",
+          fontSize: "14px",
+          color: "var(--text-color)",
+          opacity: "0.8"
         }}>
-          <button
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "var(--accent-color)",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              fontSize: "14px"
-            }}
-          >
-            Previous
-          </button>
-          <span style={{ color: "var(--text-color)", fontSize: "14px" }}>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "var(--accent-color)",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              fontSize: "14px"
-            }}
-          >
-            Next
-          </button>
+          {filteredProducts.length === 0 ? (
+            <span style={{ color: "#ff6b6b" }}>
+              ❌ No products found matching "{searchTerm}"
+            </span>
+          ) : null}
+        </div>
+      )}
+
+      {filteredProducts.length > 0 ? (
+        <>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: "15px",
+            marginBottom: "30px"
+          }}>
+            {paginatedProducts.map((p) => (
+              <ProductCard key={p._id} product={p} addToCart={addToCart} />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{ 
+              textAlign: "center",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap"
+            }}>
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: currentPage === 1 ? "#999" : "var(--accent-color)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  transition: "background-color 0.3s"
+                }}
+              >
+                ← Previous
+              </button>
+              <span style={{ color: "var(--text-color)", fontSize: "14px", minWidth: "120px" }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: currentPage === totalPages ? "#999" : "var(--accent-color)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  transition: "background-color 0.3s"
+                }}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div style={{
+          textAlign: "center",
+          padding: "60px 20px",
+          color: "var(--text-color)",
+          opacity: "0.6"
+        }}>
+          <p style={{ fontSize: "18px", marginBottom: "10px" }}>🎯 No Products Available</p>
+          {searchTerm && (
+            <p style={{ fontSize: "14px" }}>
+              Try adjusting your search terms or browse all products by clearing the search.
+            </p>
+          )}
         </div>
       )}
     </div>
