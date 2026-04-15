@@ -5,26 +5,16 @@ import dotenv from "dotenv";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
-import twilio from "twilio";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
 dotenv.config();
 
-// ✅ Twilio Config for SMS OTP
-let twilioClient = null;
-let twilioPhoneNumber = null;
-
-if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_ACCOUNT_SID !== 'your_twilio_account_sid' && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_AUTH_TOKEN !== 'your_twilio_auth_token' && process.env.TWILIO_PHONE_NUMBER && process.env.TWILIO_PHONE_NUMBER !== 'your_twilio_phone_number') {
-  twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-  twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
-} else {
-  console.warn("⚠️ Twilio credentials not configured. OTP will not be sent via SMS. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER in .env");
-}
+// ✅ Twilio removed as per user request
 
 // ✅ Email Config for OTP
 let emailTransporter = null;
-const adminEmail = "chitteshdharshan14@gmail.com";
+const adminEmail = "suriduke01@gmail.com";
 
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_PASS !== 'your_app_password' && process.env.EMAIL_HOST && process.env.EMAIL_PORT) {
   emailTransporter = nodemailer.createTransport({
@@ -135,6 +125,42 @@ app.post("/api/add-product", upload.single("image"), async (req, res) => {
   } catch (err) {
     console.error("Error adding product:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Update Product Image
+app.patch("/api/products/:id/image", upload.single("image"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No image provided" });
+    }
+
+    let imagePath = "";
+    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_CLOUD_NAME !== "your_cloud_name") {
+      const result = await cloudinary.uploader.upload(req.file.path);
+      imagePath = result.secure_url;
+      fs.unlinkSync(req.file.path);
+    } else {
+      fs.unlinkSync(req.file.path);
+      return res.status(500).json({ error: "Cloudinary not configured" });
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      { image: imagePath },
+      { new: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.json(updatedProduct);
+  } catch (err) {
+    console.error("Error updating image:", err);
+    res.status(500).json({ error: "Failed to update image" });
   }
 });
 
@@ -295,6 +321,160 @@ app.post("/api/admin/verify-otp", async (req, res) => {
   } catch (err) {
     console.error("Error verifying OTP:", err);
     res.status(500).json({ error: "Failed to verify OTP" });
+  }
+});
+
+// ✅ Place Order and Email to Admin
+app.post("/api/place-order", async (req, res) => {
+  try {
+    const { name, mobile, address, email, cartItems, totalAmount } = req.body;
+
+    if (!name || !mobile || !address || !email || !cartItems || !totalAmount) {
+      return res.status(400).json({ error: "Missing required order details including address and email" });
+    }
+
+    const itemsHTML = cartItems.map(item => `
+      <tr style="border-bottom: 1px solid #ddd;">
+        <td style="padding: 10px;">${item.name}</td>
+        <td style="padding: 10px;">${item.category}</td>
+        <td style="padding: 10px; text-align: right;">₹${(item.sellingPrice || item.price).toLocaleString()}</td>
+      </tr>
+    `).join("");
+
+    const orderHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #667eea; border-radius: 8px; }
+          .header { background: #667eea; color: white; padding: 15px; text-align: center; border-radius: 5px 5px 0 0; }
+          .customer-info { margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 5px; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th { background: #f2f2f2; padding: 10px; text-align: left; }
+          .total { font-size: 1.2rem; font-weight: bold; color: #667eea; text-align: right; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>📦 New Order Received!</h2>
+          </div>
+          
+          <div class="customer-info">
+            <p><strong>Customer Name:</strong> ${name}</p>
+            <p><strong>Mobile Number:</strong> ${mobile}</p>
+            <p><strong>Delivery Address:</strong> ${address}</p>
+            <p><strong>Order Date:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th style="text-align: right;">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHTML}
+            </tbody>
+          </table>
+
+          <div class="total">
+            Total Amount: ₹${totalAmount.toLocaleString()}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const customerHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #4CAF50; border-radius: 8px; }
+          .header { background: #4CAF50; color: white; padding: 15px; text-align: center; border-radius: 5px 5px 0 0; }
+          .message { margin: 20px 0; padding: 15px; background: #e8f5e9; border-radius: 5px; text-align: center; font-size: 1.1rem; color: #2e7d32; border: 1px solid #c8e6c9; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th { background: #f2f2f2; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
+          td { padding: 10px; border-bottom: 1px solid #ddd; }
+          .total { font-size: 1.2rem; font-weight: bold; color: #4CAF50; text-align: right; margin-top: 20px; padding-top: 10px; border-top: 2px solid #4CAF50; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2 style="margin: 0;">🎉 Order Placed Successfully!</h2>
+          </div>
+          
+          <div class="message">
+            <strong>Dealer will call you soon</strong> to confirm your order and delivery details.
+          </div>
+
+          <p>Hi ${name},</p>
+          <p>Thank you for choosing JayaSuriya Crackers. Here is your order summary:</p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th style="text-align: right;">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHTML}
+            </tbody>
+          </table>
+
+          <div class="total">
+            Total Amount: ₹${totalAmount.toLocaleString()}
+          </div>
+          
+          <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 5px; font-size: 0.9rem; color: #555;">
+            <strong>Your Details:</strong><br>
+            Mobile: ${mobile}<br>
+            Delivery Address: ${address}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    if (emailTransporter) {
+      // Send email to Admin
+      await emailTransporter.sendMail({
+        from: `"JayaSuriya Crackers" <${process.env.EMAIL_USER}>`,
+        to: adminEmail,
+        subject: `🚨 New Order from ${name} - ₹${totalAmount.toLocaleString()}`,
+        html: orderHTML,
+      });
+      console.log(`📧 Order email sent to admin for ${name}`);
+
+      // Send email to Customer
+      await emailTransporter.sendMail({
+        from: `"JayaSuriya Crackers" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: `🎉 Order Placed Successfully! - JayaSuriya Crackers`,
+        html: customerHTML,
+      });
+      console.log(`📧 Confimation email sent to customer at ${email}`);
+    } else {
+      console.log("---------------- ORDER (DEMO) ----------------");
+      console.log(`Customer: ${name} (${mobile})`);
+      console.log(`Address: ${address}`);
+      console.log(`Total: ₹${totalAmount}`);
+      console.log("Items:", cartItems.map(i => i.name).join(", "));
+      console.log("----------------------------------------------");
+    }
+
+    res.json({ message: "Order placed successfully! Admin will contact you soon." });
+  } catch (err) {
+    console.error("Error placing order:", err);
+    res.status(500).json({ error: "Failed to place order" });
   }
 });
 

@@ -1,32 +1,28 @@
 function ProductCard({ product, addToCart }) {
   return (
-    <div style={{
-      border: `1px solid var(--border-color)`,
-      padding: "12px",
-      borderRadius: "8px",
+    <div className="product-card" style={{
+      padding: "15px",
+      borderRadius: "15px",
       textAlign: "center",
-      boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
-      backgroundColor: "var(--card-bg)",
-      color: "var(--text-color)",
       display: "flex",
       flexDirection: "column",
       height: "100%",
       position: "relative",
-      overflow: "hidden"
     }}>
       {/* Discount Badge */}
       {product.discount > 0 && (
         <div style={{
           position: "absolute",
-          top: "10px",
-          right: "10px",
-          backgroundColor: "#ff4444",
+          top: "15px",
+          right: "15px",
+          backgroundColor: "var(--accent-secondary)",
           color: "white",
-          padding: "5px 10px",
-          borderRadius: "5px",
-          fontSize: "0.75rem",
+          padding: "5px 12px",
+          borderRadius: "20px",
+          fontSize: "0.8rem",
           fontWeight: "bold",
-          zIndex: 10
+          zIndex: 10,
+          boxShadow: "0 0 10px rgba(255, 102, 0, 0.5)"
         }}>
           {product.discount}% OFF
         </div>
@@ -34,117 +30,77 @@ function ProductCard({ product, addToCart }) {
 
       {/* Product Image */}
       {(product.image || product.imageUrl) && (
-        <img
-          src={product.image || product.imageUrl}
-          alt={product.name}
-          style={{ 
-            width: "100%", 
-            height: "200px", 
-            objectFit: "cover", 
-            borderRadius: "5px",
-            marginBottom: "10px",
-            display: "block"
-          }}
-          onError={(e) => {
-            e.target.src = "https://via.placeholder.com/300?text=No+Image";
-          }}
-        />
+        <div style={{ overflow: 'hidden', borderRadius: '10px', marginBottom: '15px' }}>
+          <img
+            src={product.image || product.imageUrl}
+            alt={product.name}
+            style={{ 
+              width: "100%", 
+              height: "220px", 
+              objectFit: "cover", 
+              display: "block"
+            }}
+            onError={(e) => {
+              e.target.src = "https://via.placeholder.com/300?text=No+Image";
+            }}
+          />
+        </div>
       )}
 
-      {/* Product Name */}
-      <h3 style={{ margin: "8px 0", fontSize: "1rem", fontWeight: "bold" }}>
+      {/* Product Information */}
+      <h3 style={{ margin: "10px 0", fontSize: "1.2rem", fontWeight: "700" }}>
         {product.name}
       </h3>
 
-      {/* Product Description */}
       {product.description && (
         <p style={{ 
-          margin: "5px 0", 
-          fontSize: "0.8rem", 
-          color: "#aaa", 
+          margin: "8px 0", 
+          fontSize: "0.85rem", 
+          opacity: "0.7", 
           flex: 1,
-          minHeight: "40px"
+          minHeight: "45px"
         }}>
-          {product.description.length > 50 
-            ? product.description.substring(0, 50) + "..." 
+          {product.description.length > 60 
+            ? product.description.substring(0, 60) + "..." 
             : product.description}
         </p>
       )}
 
       {/* Price Section */}
       <div style={{
-        margin: "10px 0",
+        margin: "15px 0",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "10px",
-        flexWrap: "wrap"
+        gap: "12px"
       }}>
-        {/* MRP with Strikethrough */}
         {product.mrp && (
           <p style={{
             margin: "0",
-            fontSize: "0.85rem",
-            color: "#888",
+            fontSize: "0.9rem",
+            opacity: "0.5",
             textDecoration: "line-through"
           }}>
             ₹{product.mrp.toLocaleString()}
           </p>
         )}
         
-        {/* Selling Price - Highlighted */}
-        {product.sellingPrice && (
-          <p style={{
-            margin: "0",
-            fontSize: "1.3rem",
-            color: "var(--accent-color)",
-            fontWeight: "bold"
-          }}>
-            ₹{product.sellingPrice.toLocaleString()}
-          </p>
-        )}
-        {/* Fallback for old format */}
-        {!product.sellingPrice && product.price && (
-          <p style={{
-            margin: "0",
-            fontSize: "1.3rem",
-            color: "var(--accent-color)",
-            fontWeight: "bold"
-          }}>
-            ₹{product.price.toLocaleString()}
-          </p>
-        )}
+        <p style={{
+          margin: "0",
+          fontSize: "1.4rem",
+          color: "var(--accent)",
+          fontWeight: "800"
+        }}>
+          ₹{(product.sellingPrice || product.price || 0).toLocaleString()}
+        </p>
       </div>
 
-      {/* Category */}
-      <p style={{ 
-        color: "#ccc", 
-        margin: "5px 0", 
-        fontSize: "0.85rem" 
-      }}>
-        {product.category}
-      </p>
-
-      {/* Add to Cart Button */}
       <button
-        onClick={() => addToCart(product)}
-        style={{
-          background: "var(--accent-color)",
-          color: "white",
-          border: "none",
-          padding: "10px",
-          borderRadius: "5px",
-          cursor: "pointer",
-          marginTop: "auto",
-          fontSize: "0.95rem",
-          fontWeight: "bold",
-          transition: "transform 0.2s",
-          transform: "scale(1)"
-        }}
-        onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
-        onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+        onClick={(e) => addToCart(product, e)}
+        className="premium-button"
+        style={{ marginTop: "auto" }}
       >
-        🛒 Add to Cart
+        <span>🛒 Add to Cart</span>
       </button>
     </div>
   );

@@ -5,56 +5,51 @@ import "../App.css";
 function Header({ cartCount }) {
   const [searchTerm, setSearchTerm] = useState("");
 
+  const handleSearch = (e) => {
+    const val = e.target.value;
+    setSearchTerm(val);
+    window.dispatchEvent(new CustomEvent('searchChange', { detail: val }));
+  };
+
   return (
     <header className="header">
       <div className="header-container">
-        <div className="logo">
-          <h1>Jayasuriya Crackers</h1>
-          <span className="emoji">🎆</span>
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <div className="logo">
+            <h1>Jayasuriya Crackers</h1>
+            <span className="emoji" style={{ animation: 'float 3s ease-in-out infinite' }}>🎆</span>
+          </div>
+        </Link>
+
+        <div className="search-bar">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="🔍 Search fireworks..."
+            value={searchTerm}
+            onChange={handleSearch}
+          />
         </div>
 
-        <nav className="nav">
-          <Link to="/" className="nav-link">Home</Link>
-          <Link to="/cart" className="nav-link cart-link">
+        <nav className="nav" style={{ display: 'flex', gap: '15px', alignItems: 'center', minWidth: 'fit-content' }}>
+          <Link to="/" className="nav-link" style={{ fontSize: '0.95rem', fontWeight: '500' }}>Home</Link>
+          <Link to="/cart" className="nav-link cart-link" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            padding: '10px 18px',
+            borderRadius: '25px',
+            border: '1px solid var(--border)',
+            transition: 'all 0.3s'
+          }}>
             <span className="cart-icon">🛒</span>
-            Cart ({cartCount})
+            <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>({cartCount})</span>
           </Link>
         </nav>
-      </div>
-
-      <div style={{
-        width: "100%",
-        backgroundColor: "var(--card-bg)",
-        padding: "15px 20px",
-        borderTop: `1px solid var(--border-color)`,
-        display: "flex",
-        justifyContent: "center"
-      }}>
-        <input
-          type="text"
-          placeholder="🔍 Search by product name, category, or description..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            // Dispatch event to notify Home component
-            window.dispatchEvent(new CustomEvent('searchChange', { detail: e.target.value }));
-          }}
-          style={{
-            padding: "12px 20px",
-            width: "90%",
-            maxWidth: "600px",
-            borderRadius: "25px",
-            border: `2px solid var(--accent-color)`,
-            backgroundColor: "var(--bg-color)",
-            color: "var(--text-color)",
-            fontSize: "16px",
-            transition: "all 0.3s ease",
-            boxShadow: searchTerm ? "0 0 15px rgba(102, 126, 234, 0.3)" : "none"
-          }}
-        />
       </div>
     </header>
   );
 }
 
-export default Header;
+export default Header;

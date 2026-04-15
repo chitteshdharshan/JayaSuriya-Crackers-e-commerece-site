@@ -3,20 +3,17 @@ import { useNavigate } from "react-router-dom";
 
 function AdminLogin({ setIsAdmin }) {
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState("send"); // "send" or "verify"
+  const [step, setStep] = useState("send"); 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
-
     setLoading(true);
     try {
       const res = await fetch("http://localhost:5001/api/admin/send-otp", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
 
@@ -37,7 +34,6 @@ function AdminLogin({ setIsAdmin }) {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-
     if (!otp || otp.length !== 6) {
       alert("❌ Please enter a valid 6-digit OTP");
       return;
@@ -47,9 +43,7 @@ function AdminLogin({ setIsAdmin }) {
     try {
       const res = await fetch("http://localhost:5001/api/admin/verify-otp", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ otp }),
       });
 
@@ -68,89 +62,54 @@ function AdminLogin({ setIsAdmin }) {
     }
   };
 
-  const inputStyle = {
-    width: "100%",
-    padding: "10px",
-    borderRadius: "5px",
-    border: `1px solid var(--border-color)`,
-    backgroundColor: "var(--bg-color)",
-    color: "var(--text-color)",
-    fontSize: "0.9rem",
-    boxSizing: "border-box"
-  };
-
   return (
     <div style={{
       minHeight: "100vh",
-      backgroundColor: "var(--bg-color)",
-      color: "var(--text-color)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "15px"
+      padding: "20px"
     }}>
-      <div style={{
-        backgroundColor: "var(--card-bg)",
-        padding: "25px",
-        borderRadius: "10px",
-        border: `1px solid var(--border-color)`,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+      <div className="product-card animate-fade-in" style={{
+        padding: "40px",
+        borderRadius: "20px",
         maxWidth: "400px",
-        width: "100%"
+        width: "100%",
+        textAlign: 'center'
       }}>
-        <h1 style={{
-          textAlign: "center",
-          marginBottom: "10px",
-          color: "var(--accent-color)",
-          fontSize: "1.6rem"
-        }}>
-          🔐 Admin Login
-        </h1>
-        <p style={{
-          textAlign: "center",
-          marginBottom: "20px",
-          opacity: "0.8",
-          fontSize: "0.85rem"
-        }}>
-          {step === "send" ? "Click to receive OTP via email" : "Enter the 6-digit OTP sent to your email"}
+        <h1 style={{ marginBottom: "10px" }}>🔐 Admin Login</h1>
+        <p style={{ marginBottom: "30px", opacity: 0.7, fontSize: "0.9rem" }}>
+          {step === "send" ? "Secure access for inventory management" : "Enter the verification code sent to your email"}
         </p>
 
         {step === "send" ? (
-          <form onSubmit={handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+          <form onSubmit={handleSendOtp}>
             <button
               type="submit"
               disabled={loading}
-              style={{
-                padding: "11px",
-                background: loading ? "#666" : "var(--accent-color)",
-                color: "white",
-                border: "none",
-                borderRadius: "5px",
-                cursor: loading ? "not-allowed" : "pointer",
-                fontSize: "0.95rem",
-                fontWeight: "bold",
-                transition: "background-color 0.3s"
-              }}
+              className="premium-button"
+              style={{ width: '100%' }}
             >
               {loading ? "📤 Sending OTP..." : "📧 Send OTP to Email"}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <div>
-              <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9rem" }}>
-                Enter OTP
+          <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div style={{ textAlign: 'left' }}>
+              <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85rem", opacity: 0.8 }}>
+                Verification Code
               </label>
               <input
                 type="text"
+                className="search-input"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="Enter 6-digit OTP"
+                placeholder="6-digit OTP"
                 required
-                style={inputStyle}
+                style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '1.2rem' }}
               />
-              <p style={{ fontSize: "0.8rem", color: "#888", margin: "5px 0" }}>
-                OTP sent to chitteshdharshan14@gmail.com
+              <p style={{ fontSize: "0.75rem", opacity: 0.5, marginTop: "8px" }}>
+                Sent to registered administrator email
               </p>
             </div>
 
@@ -158,16 +117,13 @@ function AdminLogin({ setIsAdmin }) {
               <button
                 type="button"
                 onClick={() => setStep("send")}
+                className="nav-link"
                 style={{
                   flex: 1,
-                  padding: "11px",
-                  background: "var(--hover-bg)",
-                  color: "var(--text-color)",
-                  border: `1px solid var(--border-color)`,
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  fontSize: "0.9rem",
-                  fontWeight: "bold"
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'rgba(255,255,255,0.05)'
                 }}
               >
                 ← Back
@@ -175,18 +131,8 @@ function AdminLogin({ setIsAdmin }) {
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  flex: 1,
-                  padding: "11px",
-                  background: loading ? "#666" : "var(--accent-color)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontSize: "0.9rem",
-                  fontWeight: "bold",
-                  transition: "background-color 0.3s"
-                }}
+                className="premium-button"
+                style={{ flex: 1 }}
               >
                 {loading ? "🔄 Verifying..." : "🔓 Login"}
               </button>

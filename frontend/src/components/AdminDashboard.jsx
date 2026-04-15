@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 function AdminDashboard({ fetchProducts }) {
   const [products, setProducts] = useState([]);
+  const [uploadingId, setUploadingId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -10,9 +11,41 @@ function AdminDashboard({ fetchProducts }) {
   }, []);
 
   const fetchAllProducts = async () => {
-    const res = await fetch("http://localhost:5001/api/products");
-    const data = await res.json();
-    setProducts(data);
+    try {
+      const res = await fetch("http://localhost:5001/api/products");
+      const data = await res.json();
+      setProducts(data);
+    } catch (err) {
+      console.error("Failed to fetch products:", err);
+    }
+  };
+
+  const handleImageUpdate = async (id, file) => {
+    if (!file) return;
+
+    setUploadingId(id);
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const res = await fetch(`http://localhost:5001/api/products/${id}/image`, {
+        method: "PATCH",
+        body: formData,
+      });
+
+      if (res.ok) {
+        fetchAllProducts();
+        fetchProducts(); 
+      } else {
+        const data = await res.json();
+        alert("❌ Error updating image: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Server Error");
+    } finally {
+      setUploadingId(null);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -25,7 +58,7 @@ function AdminDashboard({ fetchProducts }) {
         if (res.ok) {
           alert("✅ Product deleted successfully");
           fetchAllProducts();
-          fetchProducts(); // Refresh main products list
+          fetchProducts(); 
         } else {
           alert("❌ Error deleting product");
         }
@@ -37,53 +70,33 @@ function AdminDashboard({ fetchProducts }) {
   };
 
   return (
-    <div style={{ 
-      padding: "20px", 
-      maxWidth: "1400px", 
-      margin: "0 auto", 
-      backgroundColor: "var(--bg-color)", 
-      color: "var(--text-color)", 
-      minHeight: "100vh" 
-    }}>
-      <div style={{ textAlign: "center", marginBottom: "30px" }}>
-        <h1 style={{ color: "var(--accent-color)", fontSize: "2rem", margin: "10px 0" }}>
-          🛠️ Admin Dashboard
-        </h1>
-        <p style={{ margin: "5px 0" }}>Manage your products</p>
+    <div style={{ padding: "40px 20px", maxWidth: "1400px", margin: "0 auto" }}>
+      <div className="animate-fade-in" style={{ textAlign: "center", marginBottom: "40px" }}>
+        <h1 style={{ marginBottom: "10px" }}>🛠️ Admin Dashboard</h1>
+        <p style={{ opacity: 0.7 }}>Manage your festive firework inventory</p>
       </div>
 
-      <div style={{ 
+      <div className="animate-fade-in" style={{ 
         display: "flex", 
-        gap: "10px", 
+        gap: "20px", 
         justifyContent: "center", 
-        marginBottom: "30px",
+        marginBottom: "50px",
         flexWrap: "wrap"
       }}>
         <button
           onClick={() => navigate("/add-product")}
-          style={{
-            padding: "11px 20px",
-            background: "var(--accent-color)",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "bold"
-          }}
+          className="premium-button"
         >
           ➕ Add New Product
         </button>
         <button
           onClick={() => navigate("/")}
-          style={{
-            padding: "11px 20px",
-            background: "var(--hover-bg)",
-            color: "var(--text-color)",
-            border: `1px solid var(--border-color)`,
-            borderRadius: "5px",
-            cursor: "pointer",
-            fontSize: "14px"
+          className="nav-link"
+          style={{ 
+            padding: "12px 25px", 
+            border: '1px solid var(--border)', 
+            borderRadius: '30px',
+            backgroundColor: 'rgba(255,255,255,0.05)'
           }}
         >
           ← Back to Store
@@ -91,96 +104,97 @@ function AdminDashboard({ fetchProducts }) {
       </div>
 
       {products.length === 0 ? (
-        <p style={{ textAlign: "center", fontSize: "18px" }}>No products added yet</p>
+        <div style={{ textAlign: "center", padding: "100px", opacity: 0.5 }}>
+           <p style={{ fontSize: "1.5rem" }}>No products added yet</p>
+        </div>
       ) : (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "20px"
-        }}>
+        <div className="product-grid staggered-list">
           {products.map((product) => (
-            <div key={product._id} style={{
-              backgroundColor: "var(--card-bg)",
-              border: `1px solid var(--border-color)`,
-              borderRadius: "10px",
-              padding: "15px",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
-              position: "relative"
+            <div key={product._id} className="product-card" style={{
+              padding: "20px",
+              borderRadius: "15px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px"
             }}>
-              {product.discount > 0 && (
-                <div style={{
-                  position: "absolute",
-                  top: "15px",
-                  right: "15px",
-                  backgroundColor: "#ff4444",
-                  color: "white",
-                  padding: "5px 10px",
-                  borderRadius: "5px",
-                  fontSize: "0.75rem",
-                  fontWeight: "bold"
-                }}>
-                  {product.discount}% OFF
+              {(product.image || product.imageUrl) && (
+                <div style={{ borderRadius: '10px', overflow: 'hidden' }}>
+                  <img
+                    src={product.image || product.imageUrl}
+                    alt={product.name}
+                    style={{
+                      width: "100%",
+                      height: "180px",
+                      objectFit: "cover",
+                    }}
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/200?text=No+Image";
+                    }}
+                  />
                 </div>
               )}
-              {(product.image || product.imageUrl) && (
-                <img
-                  src={product.image || product.imageUrl}
-                  alt={product.name}
-                  style={{
-                    width: "100%",
-                    height: "180px",
-                    objectFit: "cover",
-                    borderRadius: "8px",
-                    marginBottom: "12px"
-                  }}
-                  onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/200?text=No+Image";
-                  }}
-                />
-              )}
-              <h3 style={{ margin: "10px 0", fontSize: "1rem" }}>{product.name}</h3>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", margin: "5px 0" }}>
-                {product.mrp && (
-                  <span style={{
-                    fontSize: "0.9rem",
-                    color: "#888",
-                    textDecoration: "line-through"
-                  }}>
-                    ₹{product.mrp.toLocaleString()}
-                  </span>
-                )}
-                <span style={{
-                  fontSize: "1.1rem",
-                  color: "var(--accent-color)",
-                  fontWeight: "bold"
-                }}>
-                  ₹{product.sellingPrice?.toLocaleString() || product.price?.toLocaleString()}
+              <h3 style={{ margin: "5px 0", fontSize: "1.1rem" }}>{product.name}</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ color: "var(--accent)", fontWeight: "bold" }}>
+                  ₹{(product.sellingPrice || product.price || 0).toLocaleString()}
                 </span>
+                {product.mrp && (
+                   <span style={{ fontSize: "0.8rem", opacity: 0.5, textDecoration: "line-through" }}>
+                     ₹{product.mrp.toLocaleString()}
+                   </span>
+                )}
               </div>
-              <p style={{ 
-                color: "#ccc", 
-                marginBottom: "12px",
-                fontSize: "0.9rem",
-                margin: "5px 0"
-              }}>
-                Category: {product.category}
-              </p>
-              <button
-                onClick={() => handleDelete(product._id)}
-                style={{
-                  width: "100%",
+              <p style={{ opacity: 0.6, fontSize: "0.85rem" }}>{product.category}</p>
+              
+              <div style={{ display: 'flex', gap: '10px', marginTop: 'auto' }}>
+                <label style={{
+                  flex: 1,
                   padding: "10px",
-                  background: "#ff4444",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
+                  background: "rgba(255, 215, 0, 0.1)",
+                  color: "var(--accent)",
+                  border: "1px solid rgba(255, 215, 0, 0.2)",
+                  borderRadius: "10px",
                   cursor: "pointer",
-                  fontSize: "0.9rem",
-                  fontWeight: "bold"
+                  textAlign: "center",
+                  fontWeight: 'bold',
+                  transition: 'all 0.3s',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  margin: 0
                 }}
-              >
-                🗑️ Remove Product
-              </button>
+                onMouseEnter={(e) => { e.target.style.background='var(--accent)'; e.target.style.color='#000'; }}
+                onMouseLeave={(e) => { e.target.style.background='rgba(255, 215, 0, 0.1)'; e.target.style.color='var(--accent)'; }}
+                >
+                  {uploadingId === product._id ? "⌛..." : "📷 Update"}
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    style={{ display: "none" }}
+                    onClick={(e) => { e.target.value = null; }}
+                    onChange={(e) => handleImageUpdate(product._id, e.target.files[0])}
+                    disabled={uploadingId === product._id}
+                  />
+                </label>
+                <button
+                  onClick={() => handleDelete(product._id)}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    background: "rgba(255, 68, 68, 0.1)",
+                    color: "#ff4444",
+                    border: "1px solid rgba(255, 68, 68, 0.2)",
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    fontWeight: 'bold',
+                    transition: 'all 0.3s'
+                  }}
+                  onMouseEnter={(e) => { e.target.style.background='#ff4444'; e.target.style.color='#fff'; }}
+                  onMouseLeave={(e) => { e.target.style.background='rgba(255, 68, 68, 0.1)'; e.target.style.color='#ff4444'; }}
+                >
+                  🗑️ Remove
+                </button>
+              </div>
             </div>
           ))}
         </div>
