@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function Cart({ cart, removeFromCart, clearCart }) {
+function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
   const [customerName, setCustomerName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [address, setAddress] = useState("");
@@ -8,8 +8,8 @@ function Cart({ cart, removeFromCart, clearCart }) {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  const total = cart.reduce((sum, item) => (sum + (item.sellingPrice || item.price || 0)), 0);
-  const originalTotal = cart.reduce((sum, item) => (sum + (item.mrp || 0)), 0);
+  const total = cart.reduce((sum, item) => (sum + (item.sellingPrice || item.price || 0) * item.quantity), 0);
+  const originalTotal = cart.reduce((sum, item) => (sum + (item.mrp || 0) * item.quantity), 0);
   const totalSavings = originalTotal - total;
 
   const triggerCelebration = () => {
@@ -113,12 +113,24 @@ function Cart({ cart, removeFromCart, clearCart }) {
                 </div>
                 <div style={{ flex: 1 }}>
                   <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{item.name}</h3>
-                  <p style={{ margin: 0, opacity: 0.6, fontSize: '0.85rem' }}>{item.category}</p>
+                  <p style={{ margin: 0, opacity: 0.6, fontSize: '0.85rem' }}>{item.category} (x{item.quantity})</p>
                   <div style={{ display: 'flex', gap: '10px', marginTop: '5px', alignItems: 'center' }}>
                     <span style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '1.2rem' }}>₹{(item.sellingPrice || item.price).toLocaleString()}</span>
                     {item.mrp && <span style={{ textDecoration: 'line-through', opacity: 0.4, fontSize: '0.9rem' }}>₹{item.mrp.toLocaleString()}</span>}
                   </div>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '5px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                  <button 
+                    onClick={() => updateQuantity(item._id, -1)} 
+                    style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer' }}
+                  >−</button>
+                  <span style={{ minWidth: '20px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</span>
+                  <button 
+                    onClick={() => updateQuantity(item._id, 1)} 
+                    style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer' }}
+                  >+</button>
+                </div>
+
                 <button onClick={() => removeFromCart(item._id)} style={{ backgroundColor: 'rgba(255,68,68,0.1)', color: '#ff4444', border: '1px solid rgba(255,68,68,0.2)', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.3s' }} onMouseEnter={(e) => { e.target.style.backgroundColor='#ff4444'; e.target.style.color='#fff'; }} onMouseLeave={(e) => { e.target.style.backgroundColor='rgba(255,68,68,0.1)'; e.target.style.color='#ff4444'; }}>🗑️</button>
               </div>
             ))}
@@ -154,7 +166,7 @@ function Cart({ cart, removeFromCart, clearCart }) {
               <h2 style={{ fontSize: '1.3rem', marginBottom: '20px' }}>💰 Order Summary</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
-                  <span>Subtotal ({cart.length} items)</span>
+                  <span>Subtotal ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
                   <span>₹{originalTotal.toLocaleString()}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#4CAF50' }}>

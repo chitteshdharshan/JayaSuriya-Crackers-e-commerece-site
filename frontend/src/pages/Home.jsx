@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import ProductCard from "../components/ProductCard";
 
-function Home({ products, addToCart }) {
+function Home({ products, cart, addToCart, updateQuantity }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const itemsPerPage = 8;
 
-  const categories = ["All", ...new Set(products.map(p => p.category))];
+  const categories = ["All", ...new Set(Array.isArray(products) ? products.map(p => p.category) : [])];
 
   // Listen to search changes from Header
   useEffect(() => {
@@ -92,9 +92,19 @@ function Home({ products, addToCart }) {
           ) : (
             <>
               <div className="product-grid staggered-list">
-                {paginatedProducts.map((p) => (
-                  <ProductCard key={p._id} product={p} addToCart={addToCart} />
-                ))}
+                {paginatedProducts.map((p) => {
+                  const cartItem = cart.find(item => item._id === p._id);
+                  const quantity = cartItem ? cartItem.quantity : 0;
+                  return (
+                    <ProductCard 
+                      key={p._id} 
+                      product={p} 
+                      addToCart={addToCart} 
+                      quantity={quantity}
+                      updateQuantity={updateQuantity}
+                    />
+                  );
+                })}
               </div>
 
               {totalPages > 1 && (

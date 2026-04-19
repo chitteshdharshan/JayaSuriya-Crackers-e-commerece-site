@@ -82,12 +82,33 @@ function App() {
   }, []);
 
   const addToCart = (product, event) => {
-    setCart([...cart, product]);
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item._id === product._id);
+      if (existingItem) {
+        return prevCart.map(item =>
+          item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prevCart, { ...product, quantity: 1 }];
+    });
+
     if (event) {
       window.dispatchEvent(new CustomEvent('trigger-firework', { 
         detail: { x: event.clientX, y: event.clientY } 
       }));
     }
+  };
+
+  const updateQuantity = (id, delta) => {
+    setCart(prevCart => {
+      return prevCart.map(item => {
+        if (item._id === id) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
+        }
+        return item;
+      }).filter(Boolean);
+    });
   };
 
   const removeFromCart = (id) => {
@@ -110,11 +131,11 @@ function App() {
       ))}
       
       <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <Header cartCount={cart.length} />
+        <Header cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)} />
         <main style={{ flex: 1 }}>
           <Routes>
-            <Route path="/" element={<Home products={products} addToCart={addToCart} />} />
-            <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} clearCart={clearCart} />} />
+            <Route path="/" element={<Home products={products} cart={cart} addToCart={addToCart} updateQuantity={updateQuantity} />} />
+            <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} clearCart={clearCart} />} />
             <Route path="/admin" element={<AdminLogin setIsAdmin={setIsAdmin} />} />
             <Route path="/admin/dashboard" element={isAdmin ? <AdminDashboard fetchProducts={fetchProducts} /> : <AdminLogin setIsAdmin={setIsAdmin} />} />
             <Route path="/add-product" element={isAdmin ? <AddProduct fetchProducts={fetchProducts} /> : <AdminLogin setIsAdmin={setIsAdmin} />} />

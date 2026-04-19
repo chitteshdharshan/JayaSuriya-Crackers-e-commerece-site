@@ -1,4 +1,4 @@
-function ProductCard({ product, addToCart }) {
+function ProductCard({ product, addToCart, quantity = 0, updateQuantity }) {
   return (
     <div className="product-card" style={{
       padding: "15px",
@@ -95,13 +95,78 @@ function ProductCard({ product, addToCart }) {
         </p>
       </div>
 
-      <button
-        onClick={(e) => addToCart(product, e)}
-        className="premium-button"
-        style={{ marginTop: "auto" }}
-      >
-        <span>🛒 Add to Cart</span>
-      </button>
+      {quantity > 0 ? (
+        <div style={{ 
+          marginTop: "auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: "rgba(255, 255, 255, 0.03)",
+          borderRadius: "12px",
+          padding: "5px",
+          border: "1px solid var(--border)",
+          height: "45px"
+        }}>
+          <button 
+            onClick={() => updateQuantity(product._id, -1)}
+            style={{
+              background: "rgba(255, 68, 68, 0.1)",
+              color: "#ff4444",
+              border: "none",
+              borderRadius: "8px",
+              width: "35px",
+              height: "35px",
+              fontSize: "1.2rem",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+              fontWeight: "bold"
+            }}
+            onMouseEnter={(e) => { e.target.style.background = "rgba(255, 68, 68, 0.2)"; }}
+            onMouseLeave={(e) => { e.target.style.background = "rgba(255, 68, 68, 0.1)"; }}
+          >
+            −
+          </button>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.7rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '1px' }}>Qty</span>
+            <span style={{ fontWeight: "800", fontSize: "1.1rem", color: "var(--accent)" }}>{quantity}</span>
+          </div>
+
+          <button 
+            onClick={(e) => addToCart(product, e)}
+            style={{
+              background: "rgba(76, 175, 80, 0.1)",
+              color: "#4CAF50",
+              border: "none",
+              borderRadius: "8px",
+              width: "35px",
+              height: "35px",
+              fontSize: "1.2rem",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+              fontWeight: "bold"
+            }}
+            onMouseEnter={(e) => { e.target.style.background = "rgba(76, 175, 80, 0.2)"; }}
+            onMouseLeave={(e) => { e.target.style.background = "rgba(76, 175, 80, 0.1)"; }}
+          >
+            +
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={(e) => addToCart(product, e)}
+          className="premium-button"
+          style={{ marginTop: "auto" }}
+        >
+          <span>🛒 Add to Cart</span>
+        </button>
+      )}
     </div>
   );
 }

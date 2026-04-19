@@ -166,8 +166,13 @@ app.patch("/api/products/:id/image", upload.single("image"), async (req, res) =>
 
 // ✅ Get Products (for frontend)
 app.get("/api/products", async (req, res) => {
-  const products = await Product.find();
-  res.json(products);
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (err) {
+    console.error("Error fetching products:", err);
+    res.status(500).json({ error: "Failed to connect to database or fetch products." });
+  }
 });
 
 // ✅ Clear all products (for debugging/reset)
