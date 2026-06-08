@@ -12,7 +12,7 @@ function AdminDashboard({ fetchProducts }) {
 
   const fetchAllProducts = async () => {
     try {
-      const res = await fetch("http://localhost:5001/api/products");
+      const res = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/products");
       const data = await res.json();
       setProducts(data);
     } catch (err) {
@@ -28,7 +28,7 @@ function AdminDashboard({ fetchProducts }) {
     formData.append("image", file);
 
     try {
-      const res = await fetch(`http://localhost:5001/api/products/${id}/image`, {
+      const res = await fetch(`https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/products/${id}/image`, {
         method: "PATCH",
         body: formData,
       });
@@ -51,7 +51,7 @@ function AdminDashboard({ fetchProducts }) {
   const handleDelete = async (id) => {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
-        const res = await fetch(`http://localhost:5001/api/products/${id}`, {
+        const res = await fetch(`https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/products/${id}`, {
           method: "DELETE",
         });
 

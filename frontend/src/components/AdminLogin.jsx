@@ -11,7 +11,7 @@ function AdminLogin({ setIsAdmin }) {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5001/api/admin/send-otp", {
+      const res = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/admin/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -41,7 +41,7 @@ function AdminLogin({ setIsAdmin }) {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5001/api/admin/verify-otp", {
+      const res = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/admin/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ otp }),

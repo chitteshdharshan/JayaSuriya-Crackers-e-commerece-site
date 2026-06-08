@@ -66,7 +66,7 @@ function AddProduct({ fetchProducts }) {
     if (image && !useUrlOnly) data.append("image", image);
 
     try {
-      const res = await fetch("http://localhost:5001/api/add-product", {
+      const res = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/add-product", {
         method: "POST",
         body: data,
       });

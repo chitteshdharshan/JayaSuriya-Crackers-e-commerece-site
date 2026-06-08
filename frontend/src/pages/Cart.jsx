@@ -7,6 +7,7 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
   const [email, setEmail] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [placedOrder, setPlacedOrder] = useState(null);
 
   const total = cart.reduce((sum, item) => (sum + (item.sellingPrice || item.price || 0) * item.quantity), 0);
   const originalTotal = cart.reduce((sum, item) => (sum + (item.mrp || 0) * item.quantity), 0);
@@ -24,6 +25,22 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
         }));
       }, i * 150);
     }
+  };
+
+  const generateWhatsAppLink = (order) => {
+    const adminNumber = "917373073989"; // Admin WhatsApp number
+    let text = `*New Order from ${order.name}* 🎆\n\n`;
+    text += `*Mobile:* ${order.mobile}\n`;
+    text += `*Address:* ${order.address}\n\n`;
+    text += `*Order Items:*\n`;
+    order.items.forEach((item, index) => {
+      text += `${index + 1}. ${item.name} - ${item.category} (x${item.quantity}) = ₹${((item.sellingPrice || item.price) * item.quantity).toLocaleString()}\n`;
+    });
+    text += `\n*Total Payable:* ₹${order.total.toLocaleString()}\n`;
+    text += `*Total Savings:* ₹${order.savings.toLocaleString()}\n\n`;
+    text += `Please confirm my order.`;
+    
+    return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
   };
 
   const handleCheckout = async () => {
@@ -45,7 +62,7 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
     setIsPlacingOrder(true);
 
     try {
-      const response = await fetch("http://localhost:5001/api/place-order", {
+      const response = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/place-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -59,6 +76,14 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
       });
 
       if (response.ok) {
+        setPlacedOrder({
+          items: [...cart],
+          total: total,
+          savings: totalSavings,
+          name: customerName,
+          mobile: mobileNumber,
+          address: address.trim()
+        });
         setOrderSuccess(true);
         triggerCelebration();
         clearCart();
@@ -84,14 +109,53 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
         🛒 Your Cart
       </h1>
 
-      {orderSuccess ? (
-        <div className="animate-fade-in" style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'rgba(76, 175, 80, 0.1)', borderRadius: '20px', border: '2px dashed #4CAF50' }}>
-          <span style={{ fontSize: '5rem' }}>🎉</span>
-          <h2 style={{ marginTop: '20px', color: '#4CAF50' }}>Order Placed Successfully!</h2>
-          <p style={{ opacity: 0.9, fontSize: '1.2rem', margin: '20px 0' }}>Happy Diwali! 🎆<br/>Our dealer will call you soon to confirm your delivery details.</p>
-          <button onClick={() => setOrderSuccess(false)} className="premium-button" style={{ marginTop: '20px' }}>
-            ← Continue Shopping
-          </button>
+      {orderSuccess && placedOrder ? (
+        <div className="animate-fade-in" style={{ padding: '40px 20px', backgroundColor: 'rgba(76, 175, 80, 0.05)', borderRadius: '20px', border: '1px solid #4CAF50' }}>
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <span style={{ fontSize: '4rem' }}>🎉</span>
+            <h2 style={{ marginTop: '10px', color: '#4CAF50' }}>Order Placed Successfully!</h2>
+            <p style={{ opacity: 0.8, fontSize: '1.1rem' }}>Happy Diwali! 🎆</p>
+          </div>
+
+          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: 'rgba(255,255,255,0.02)', padding: '25px', borderRadius: '15px', border: '1px solid var(--border)' }}>
+            <h3 style={{ marginBottom: '15px', borderBottom: '1px solid var(--border)', paddingBottom: '10px', marginTop: 0 }}>Order Details</h3>
+            <div style={{ marginBottom: '20px', fontSize: '0.95rem', opacity: 0.9, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div><strong>Name:</strong> {placedOrder.name}</div>
+              <div><strong>Mobile:</strong> {placedOrder.mobile}</div>
+              <div><strong>Address:</strong> {placedOrder.address}</div>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ marginBottom: '10px', opacity: 0.8 }}>Items Ordered:</h4>
+              {placedOrder.items.map((item, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px dashed var(--border)' }}>
+                  <span>{item.name} (x{item.quantity})</span>
+                  <span>₹{((item.sellingPrice || item.price) * item.quantity).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--accent)', marginTop: '20px', paddingTop: '15px', borderTop: '2px solid var(--border)' }}>
+              <span>Total Payable</span>
+              <span>₹{placedOrder.total.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
+            <p style={{ opacity: 0.9, fontSize: '1.1rem' }}>Please send your order details to our WhatsApp to confirm delivery.</p>
+            <a 
+              href={generateWhatsAppLink(placedOrder)} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="premium-button"
+              style={{ backgroundColor: '#25D366', borderColor: '#25D366', color: 'white', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '15px 30px', fontSize: '1.1rem', boxShadow: '0 4px 15px rgba(37, 211, 102, 0.3)' }}
+            >
+              <span style={{ fontSize: '1.3rem' }}>📱</span> Send Order to WhatsApp
+            </a>
+            <button onClick={() => { setOrderSuccess(false); setPlacedOrder(null); }} style={{ background: 'none', border: 'none', color: 'var(--text)', opacity: 0.7, cursor: 'pointer', textDecoration: 'underline', marginTop: '10px', fontSize: '1rem' }}>
+              ← Back to Shopping
+            </button>
+          </div>
         </div>
       ) : cart.length === 0 ? (
         <div className="animate-fade-in" style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px dashed var(--border)' }}>

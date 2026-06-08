@@ -18,7 +18,7 @@ function App() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("http://localhost:5001/api/products");
+      const res = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/products");
       const data = await res.json();
       setProducts(data);
     } catch (err) {
