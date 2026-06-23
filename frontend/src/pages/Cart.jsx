@@ -30,8 +30,15 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
 
   const generateWhatsAppLink = (order, pdfUrl) => {
     const adminNumber = "917373073989";
-    let text = `*New Order from ${order.name}*\n`;
+    let text = `*New Order from ${order.name}*\n\n`;
     text += `*Mobile:* ${order.mobile}\n`;
+    text += `*Address:* ${order.address}\n\n`;
+    text += `*Order Items:*\n`;
+    order.items.forEach((item, index) => {
+      text += `${index + 1}. ${item.name} - ${item.category} (x${item.quantity}) = Rs.${((item.sellingPrice || item.price) * item.quantity).toLocaleString()}\n`;
+    });
+    text += `\n*Total Payable:* Rs.${order.total.toLocaleString()}\n`;
+    text += `*Diwali Savings:* Rs.${order.savings.toLocaleString()}\n\n`;
     if (pdfUrl) {
       text += `*Invoice PDF:* ${pdfUrl}\n\n`;
     }
