@@ -76,14 +76,15 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
       });
 
       if (response.ok) {
-        setPlacedOrder({
+        const orderData = {
           items: [...cart],
           total: total,
           savings: totalSavings,
           name: customerName,
           mobile: mobileNumber,
           address: address.trim()
-        });
+        };
+        setPlacedOrder(orderData);
         setOrderSuccess(true);
         triggerCelebration();
         clearCart();
@@ -91,6 +92,10 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
         setMobileNumber("");
         setAddress("");
         setEmail("");
+
+        // Automatically send the order details to WhatsApp
+        const whatsappLink = generateWhatsAppLink(orderData);
+        window.location.href = whatsappLink;
       } else {
         const data = await response.json();
         alert("❌ Error: " + (data.error || "Failed to place order"));
