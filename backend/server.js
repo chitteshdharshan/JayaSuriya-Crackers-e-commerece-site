@@ -5,8 +5,13 @@ import dotenv from "dotenv";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -545,10 +550,21 @@ app.delete("/api/products/:id", async (req, res) => {
   }
 });
 
-// ✅ Root route
-app.get("/", (req, res) => {
-  res.send("Backend is running");
-});
+// ✅ Serve React Frontend (built with Vite)
+const frontendDist = path.join(__dirname, "..", "frontend", "dist");
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+
+  // Catch-all: return index.html for any non-API route (fixes 404 on page reload)
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+} else {
+  // Fallback when dist not built yet
+  app.get("/", (req, res) => {
+    res.send("Backend is running. Build the frontend to serve the full app.");
+  });
+}
 
 // ================= SERVER =================
 app.listen(5001, () => console.log("🚀 Server running on port 5001"));
