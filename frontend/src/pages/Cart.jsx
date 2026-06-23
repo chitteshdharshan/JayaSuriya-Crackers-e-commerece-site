@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 
 function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
   const [customerName, setCustomerName] = useState("");
@@ -41,6 +43,106 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
     text += `Please confirm my order.`;
     
     return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
+  };
+
+  const downloadPDF = (order) => {
+    try {
+      const doc = new jsPDF();
+      
+      // Header Banner
+      doc.setFillColor(22, 33, 62); // Dark Blue
+      doc.rect(0, 0, 210, 40, "F");
+      
+      // Title
+      doc.setTextColor(255, 215, 0); // Gold
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.text("JAYASURIYA CRACKERS", 20, 20);
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text("Premium Fireworks & Crackers", 20, 28);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 25);
+      
+      // Invoice Info
+      doc.setTextColor(33, 33, 33);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("INVOICE / RECEIPT", 20, 55);
+      
+      // Divider
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.5);
+      doc.line(20, 58, 190, 58);
+      
+      // Bill To Details
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("Customer Details:", 20, 68);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Name: ${order.name}`, 20, 75);
+      doc.text(`Mobile: ${order.mobile}`, 20, 81);
+      doc.text(`Address: ${order.address}`, 20, 87);
+      
+      // Table Data
+      const tableColumn = ["S.No", "Item Description", "Category", "Qty", "Rate (Rs)", "Amount (Rs)"];
+      const tableRows = [];
+      
+      order.items.forEach((item, index) => {
+        const itemData = [
+          index + 1,
+          item.name,
+          item.category,
+          item.quantity,
+          (item.sellingPrice || item.price).toLocaleString(),
+          ((item.sellingPrice || item.price) * item.quantity).toLocaleString()
+        ];
+        tableRows.push(itemData);
+      });
+      
+      // Generate Table
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 95,
+        theme: "striped",
+        headStyles: {
+          fillColor: [22, 33, 62],
+          textColor: [255, 215, 0],
+          fontSize: 10,
+          fontStyle: "bold"
+        },
+        bodyStyles: {
+          textColor: [50, 50, 50],
+          fontSize: 9
+        },
+        margin: { left: 20, right: 20 }
+      });
+      
+      const finalY = doc.lastAutoTable.finalY + 15;
+      
+      // Totals
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(76, 175, 80); // Green
+      doc.text(`Diwali Savings: -Rs ${order.savings.toLocaleString()}`, 130, finalY);
+      
+      doc.setTextColor(22, 33, 62);
+      doc.setFontSize(13);
+      doc.text(`Total Payable: Rs ${order.total.toLocaleString()}`, 130, finalY + 8);
+      
+      // Footer
+      doc.setTextColor(150, 150, 150);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.text("Thank you for your order! Have a safe and happy Diwali! 🎇", 105, finalY + 25, { align: "center" });
+      
+      doc.save(`Jayasuriya_Order_${order.name.replace(/\s+/g, '_')}.pdf`);
+    } catch (error) {
+      console.error("Failed to generate PDF:", error);
+      alert("Failed to generate PDF invoice.");
+    }
   };
 
   const handleCheckout = async () => {
@@ -92,6 +194,9 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
         setMobileNumber("");
         setAddress("");
         setEmail("");
+
+        // Automatically trigger PDF download
+        downloadPDF(orderData);
 
         // Automatically send the order details to WhatsApp
         const whatsappLink = generateWhatsAppLink(orderData);
@@ -148,15 +253,24 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
 
           <div style={{ textAlign: 'center', marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
             <p style={{ opacity: 0.9, fontSize: '1.1rem' }}>Please send your order details to our WhatsApp to confirm delivery.</p>
-            <a 
-              href={generateWhatsAppLink(placedOrder)} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="premium-button"
-              style={{ backgroundColor: '#25D366', borderColor: '#25D366', color: 'white', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '15px 30px', fontSize: '1.1rem', boxShadow: '0 4px 15px rgba(37, 211, 102, 0.3)' }}
-            >
-              <span style={{ fontSize: '1.3rem' }}>📱</span> Send Order to WhatsApp
-            </a>
+            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <a 
+                href={generateWhatsAppLink(placedOrder)} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="premium-button"
+                style={{ backgroundColor: '#25D366', borderColor: '#25D366', color: 'white', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '15px 30px', fontSize: '1.1rem', boxShadow: '0 4px 15px rgba(37, 211, 102, 0.3)' }}
+              >
+                <span style={{ fontSize: '1.3rem' }}>📱</span> Send Order to WhatsApp
+              </a>
+              <button 
+                onClick={() => downloadPDF(placedOrder)}
+                className="premium-button"
+                style={{ backgroundColor: '#0284c7', borderColor: '#0284c7', color: 'white', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '15px 30px', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(2, 132, 199, 0.3)' }}
+              >
+                <span style={{ fontSize: '1.3rem' }}>📄</span> Download Invoice PDF
+              </button>
+            </div>
             <button onClick={() => { setOrderSuccess(false); setPlacedOrder(null); }} style={{ background: 'none', border: 'none', color: 'var(--text)', opacity: 0.7, cursor: 'pointer', textDecoration: 'underline', marginTop: '10px', fontSize: '1rem' }}>
               ← Back to Shopping
             </button>
