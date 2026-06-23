@@ -81,7 +81,7 @@ export default function Footer() {
               <strong style={{ color: "#fff" }}>Jayasuriya Crackers</strong><br />
               3/1016/4, Jayaram Complex,<br />
               Paraipatti, Sattur Road,<br />
-              CONTACT: 944275989<br />
+              CONTACT: 9442275989<br />
               Sivakasi — 626 189<br />
               Tamil Nadu, India 🇮🇳
             </p>
@@ -89,7 +89,7 @@ export default function Footer() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <a
-              href="https://maps.google.com/?q=Jayasuriya+Crackers+Sivakasi"
+              href="https://maps.app.goo.gl/2Ri5C9nayPUNVcMs6"
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -108,7 +108,7 @@ export default function Footer() {
               🗺️ Get Directions on Google Maps
             </a>
             <a
-              href="https://wa.me/91XXXXXXXXXX"
+              href="https://wa.me/919442275989"
               target="_blank"
               rel="noopener noreferrer"
               style={{
