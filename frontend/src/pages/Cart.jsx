@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
   const [customerName, setCustomerName] = useState("");
@@ -16,148 +16,196 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
   const totalSavings = originalTotal - total;
 
   const triggerCelebration = () => {
-    // Trigger multiple random fireworks
     for (let i = 0; i < 15; i++) {
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('trigger-firework', { 
-          detail: { 
-            x: Math.random() * window.innerWidth, 
-            y: Math.random() * window.innerHeight 
-          } 
+        window.dispatchEvent(new CustomEvent('trigger-firework', {
+          detail: {
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight
+          }
         }));
       }, i * 150);
     }
   };
 
   const generateWhatsAppLink = (order) => {
-    const adminNumber = "917373073989"; // Admin WhatsApp number
-    let text = `*New Order from ${order.name}* 🎆\n\n`;
+    const adminNumber = "917373073989";
+    let text = `*New Order from ${order.name}*\n\n`;
     text += `*Mobile:* ${order.mobile}\n`;
     text += `*Address:* ${order.address}\n\n`;
     text += `*Order Items:*\n`;
     order.items.forEach((item, index) => {
-      text += `${index + 1}. ${item.name} - ${item.category} (x${item.quantity}) = ₹${((item.sellingPrice || item.price) * item.quantity).toLocaleString()}\n`;
+      text += `${index + 1}. ${item.name} - ${item.category} (x${item.quantity}) = Rs.${((item.sellingPrice || item.price) * item.quantity).toLocaleString()}\n`;
     });
-    text += `\n*Total Payable:* ₹${order.total.toLocaleString()}\n`;
-    text += `*Total Savings:* ₹${order.savings.toLocaleString()}\n\n`;
-    text += `Please confirm my order.`;
-    
+    text += `\n*Total Payable:* Rs.${order.total.toLocaleString()}\n`;
+    text += `*Diwali Savings:* Rs.${order.savings.toLocaleString()}\n\n`;
+    text += `Please confirm my order. Thank you!`;
     return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
   };
 
   const downloadPDF = (order) => {
     try {
-      const doc = new jsPDF();
-      
-      // Header Banner
-      doc.setFillColor(22, 33, 62); // Dark Blue
-      doc.rect(0, 0, 210, 40, "F");
-      
-      // Title
-      doc.setTextColor(255, 215, 0); // Gold
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+
+      // ── Header background ──
+      doc.setFillColor(15, 52, 96);
+      doc.rect(0, 0, pageW, 48, "F");
+
+      // Gold accent strip
+      doc.setFillColor(255, 200, 0);
+      doc.rect(0, 44, pageW, 4, "F");
+
+      // Company name
+      doc.setTextColor(255, 200, 0);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);
-      doc.text("JAYASURIYA CRACKERS", 20, 20);
-      
+      doc.text("JAYASURIYA CRACKERS", 15, 20);
+
+      // Tagline
+      doc.setTextColor(200, 220, 255);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text("Premium Fireworks & Crackers", 15, 28);
+      doc.text("Phone: +91 73730 73989", 15, 34);
+
+      // Invoice label on right
       doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text("Premium Fireworks & Crackers", 20, 28);
-      doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 25);
-      
-      // Invoice Info
-      doc.setTextColor(33, 33, 33);
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("INVOICE / RECEIPT", 20, 55);
-      
-      // Divider
-      doc.setDrawColor(220, 220, 220);
-      doc.setLineWidth(0.5);
-      doc.line(20, 58, 190, 58);
-      
-      // Bill To Details
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text("Customer Details:", 20, 68);
+      doc.text("ORDER INVOICE", pageW - 15, 20, { align: "right" });
       doc.setFont("helvetica", "normal");
-      doc.text(`Name: ${order.name}`, 20, 75);
-      doc.text(`Mobile: ${order.mobile}`, 20, 81);
-      doc.text(`Address: ${order.address}`, 20, 87);
-      
-      // Table Data
-      const tableColumn = ["S.No", "Item Description", "Category", "Qty", "Rate (Rs)", "Amount (Rs)"];
-      const tableRows = [];
-      
-      order.items.forEach((item, index) => {
-        const itemData = [
-          index + 1,
-          item.name,
-          item.category,
-          item.quantity,
-          (item.sellingPrice || item.price).toLocaleString(),
-          ((item.sellingPrice || item.price) * item.quantity).toLocaleString()
-        ];
-        tableRows.push(itemData);
-      });
-      
-      // Generate Table
-      doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 95,
-        theme: "striped",
-        headStyles: {
-          fillColor: [22, 33, 62],
-          textColor: [255, 215, 0],
-          fontSize: 10,
-          fontStyle: "bold"
-        },
-        bodyStyles: {
-          textColor: [50, 50, 50],
-          fontSize: 9
-        },
-        margin: { left: 20, right: 20 }
-      });
-      
-      const finalY = doc.lastAutoTable.finalY + 15;
-      
-      // Totals
+      doc.setFontSize(9);
+      doc.setTextColor(200, 220, 255);
+      doc.text(`Date: ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`, pageW - 15, 28, { align: "right" });
+      doc.text(`Order ID: JC-${Date.now().toString().slice(-6)}`, pageW - 15, 34, { align: "right" });
+
+      // ── Bill To box ──
+      doc.setFillColor(240, 246, 255);
+      doc.roundedRect(15, 54, pageW - 30, 38, 3, 3, "F");
+      doc.setDrawColor(180, 210, 255);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(15, 54, pageW - 30, 38, 3, 3, "S");
+
+      doc.setTextColor(15, 52, 96);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text("BILLED TO", 20, 62);
+      doc.setDrawColor(255, 200, 0);
+      doc.setLineWidth(1);
+      doc.line(20, 64, 48, 64);
+
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
-      doc.setTextColor(76, 175, 80); // Green
-      doc.text(`Diwali Savings: -Rs ${order.savings.toLocaleString()}`, 130, finalY);
-      
-      doc.setTextColor(22, 33, 62);
-      doc.setFontSize(13);
-      doc.text(`Total Payable: Rs ${order.total.toLocaleString()}`, 130, finalY + 8);
-      
-      // Footer
-      doc.setTextColor(150, 150, 150);
+      doc.setTextColor(20, 20, 20);
+      doc.text(order.name, 20, 71);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Mobile: ${order.mobile}`, 20, 78);
+
+      // Wrap long address
+      const addrLines = doc.splitTextToSize(`Address: ${order.address}`, pageW - 40);
+      doc.text(addrLines, 20, 84);
+
+      // ── Items Table ──
+      const tableHead = [["#", "Item", "Category", "Qty", "Rate (Rs)", "Amount (Rs)"]];
+      const tableBody = order.items.map((item, i) => [
+        i + 1,
+        item.name,
+        item.category || "-",
+        item.quantity,
+        Number(item.sellingPrice || item.price).toLocaleString("en-IN"),
+        Number((item.sellingPrice || item.price) * item.quantity).toLocaleString("en-IN"),
+      ]);
+
+      autoTable(doc, {
+        head: tableHead,
+        body: tableBody,
+        startY: 98,
+        theme: "grid",
+        styles: { fontSize: 9, cellPadding: 4, textColor: [30, 30, 30] },
+        headStyles: {
+          fillColor: [15, 52, 96],
+          textColor: [255, 200, 0],
+          fontStyle: "bold",
+          fontSize: 9,
+          halign: "center",
+        },
+        columnStyles: {
+          0: { halign: "center", cellWidth: 10 },
+          3: { halign: "center", cellWidth: 14 },
+          4: { halign: "right", cellWidth: 28 },
+          5: { halign: "right", cellWidth: 30 },
+        },
+        alternateRowStyles: { fillColor: [245, 248, 255] },
+        margin: { left: 15, right: 15 },
+      });
+
+      const afterTableY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 160;
+
+      // ── Totals section ──
+      const totalsX = pageW - 80;
+      const totalsY = afterTableY + 10;
+
+      doc.setFillColor(245, 248, 255);
+      doc.roundedRect(totalsX - 5, totalsY - 6, 75, 34, 3, 3, "F");
+      doc.setDrawColor(180, 210, 255);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(totalsX - 5, totalsY - 6, 75, 34, 3, 3, "S");
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text("Subtotal:", totalsX, totalsY);
+      doc.text(`Rs. ${Number(originalTotal).toLocaleString("en-IN")}`, pageW - 15, totalsY, { align: "right" });
+
+      doc.setTextColor(34, 139, 34);
+      doc.text("Diwali Savings:", totalsX, totalsY + 7);
+      doc.text(`- Rs. ${Number(order.savings).toLocaleString("en-IN")}`, pageW - 15, totalsY + 7, { align: "right" });
+
+      // Total payable bold line
+      doc.setDrawColor(15, 52, 96);
+      doc.setLineWidth(0.5);
+      doc.line(totalsX - 5, totalsY + 12, pageW - 15, totalsY + 12);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(15, 52, 96);
+      doc.text("TOTAL PAYABLE:", totalsX, totalsY + 20);
+      doc.text(`Rs. ${Number(order.total).toLocaleString("en-IN")}`, pageW - 15, totalsY + 20, { align: "right" });
+
+      // ── Footer ──
+      const footerY = afterTableY + 55;
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.3);
+      doc.line(15, footerY, pageW - 15, footerY);
+
       doc.setFont("helvetica", "italic");
-      doc.setFontSize(10);
-      doc.text("Thank you for your order! Have a safe and happy Diwali! 🎇", 105, finalY + 25, { align: "center" });
-      
-      doc.save(`Jayasuriya_Order_${order.name.replace(/\s+/g, '_')}.pdf`);
-    } catch (error) {
-      console.error("Failed to generate PDF:", error);
-      alert("Failed to generate PDF invoice.");
+      doc.setFontSize(9);
+      doc.setTextColor(130, 130, 130);
+      doc.text("Thank you for your order! Have a safe and happy Diwali!", pageW / 2, footerY + 7, { align: "center" });
+      doc.text("For queries, contact us on WhatsApp: +91 73730 73989", pageW / 2, footerY + 13, { align: "center" });
+
+      doc.save(`Jayasuriya_Order_${order.name.replace(/\s+/g, "_")}.pdf`);
+    } catch (err) {
+      console.error("PDF generation error:", err);
+      alert("Could not generate PDF. Please try again.");
     }
   };
 
   const handleCheckout = async () => {
-    if (!customerName || !mobileNumber || !address.trim() || !email.trim()) {
-      alert("Please enter your name, mobile number, email, and delivery address.");
+    if (!customerName.trim() || !mobileNumber || !address.trim() || !email.trim()) {
+      alert("Please fill in all required fields.");
       return;
     }
-
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       alert("Please enter a valid email address.");
       return;
     }
-
     if (mobileNumber.length < 10) {
-      alert("Please enter a valid mobile number.");
+      alert("Please enter a valid 10-digit mobile number.");
       return;
     }
 
@@ -180,192 +228,329 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
       if (response.ok) {
         const orderData = {
           items: [...cart],
-          total: total,
+          total,
           savings: totalSavings,
           name: customerName,
           mobile: mobileNumber,
-          address: address.trim()
+          address: address.trim(),
         };
+
         setPlacedOrder(orderData);
         setOrderSuccess(true);
         triggerCelebration();
+
+        // Download PDF first, then redirect
+        downloadPDF(orderData);
+
         clearCart();
         setCustomerName("");
         setMobileNumber("");
         setAddress("");
         setEmail("");
 
-        // Automatically trigger PDF download
-        downloadPDF(orderData);
-
-        // Automatically send the order details to WhatsApp
-        const whatsappLink = generateWhatsAppLink(orderData);
-        window.location.href = whatsappLink;
+        // Small delay so PDF download can trigger before navigation
+        setTimeout(() => {
+          window.open(generateWhatsAppLink(orderData), "_blank");
+        }, 800);
       } else {
         const data = await response.json();
-        alert("❌ Error: " + (data.error || "Failed to place order"));
+        alert("Error: " + (data.error || "Failed to place order"));
       }
     } catch (err) {
       console.error("Order error:", err);
-      alert("❌ Something went wrong while placing the order.");
+      alert("Something went wrong. Please try again.");
     } finally {
       setIsPlacingOrder(false);
     }
   };
 
+  // ─── Styles ────────────────────────────────────────────────────
+  const cardStyle = {
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "20px",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "12px 16px",
+    borderRadius: "12px",
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    color: "#fff",
+    fontSize: "0.95rem",
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+    boxSizing: "border-box",
+  };
+
+  const labelStyle = {
+    fontSize: "0.8rem",
+    fontWeight: "600",
+    letterSpacing: "0.5px",
+    opacity: 0.6,
+    marginBottom: "6px",
+    display: "block",
+    textTransform: "uppercase",
+  };
+
+  // ─── Render ───────────────────────────────────────────────────
   return (
-    <div style={{ padding: "40px 20px", maxWidth: "1200px", margin: "0 auto" }}>
-      <h1 className="animate-fade-in" style={{ textAlign: "center", marginBottom: "40px" }}>
-        🛒 Your Cart
-      </h1>
+    <div style={{ padding: "32px 16px", maxWidth: "1280px", margin: "0 auto" }}>
 
+      {/* ── Page Title ── */}
+      <div className="animate-fade-in" style={{ textAlign: "center", marginBottom: "40px" }}>
+        <h1 style={{ fontSize: "clamp(1.8rem,5vw,2.8rem)", marginBottom: "6px" }}>🛒 Your Cart</h1>
+        <p style={{ opacity: 0.5, fontSize: "0.95rem" }}>Review your items, fill in your details, and place your order</p>
+      </div>
+
+      {/* ── ORDER SUCCESS SCREEN ── */}
       {orderSuccess && placedOrder ? (
-        <div className="animate-fade-in" style={{ padding: '40px 20px', backgroundColor: 'rgba(76, 175, 80, 0.05)', borderRadius: '20px', border: '1px solid #4CAF50' }}>
-          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-            <span style={{ fontSize: '4rem' }}>🎉</span>
-            <h2 style={{ marginTop: '10px', color: '#4CAF50' }}>Order Placed Successfully!</h2>
-            <p style={{ opacity: 0.8, fontSize: '1.1rem' }}>Happy Diwali! 🎆</p>
-          </div>
+        <div className="animate-fade-in" style={{ ...cardStyle, padding: "48px 24px", border: "1px solid rgba(76,175,80,0.4)", textAlign: "center" }}>
+          <div style={{ fontSize: "5rem", lineHeight: 1 }}>🎉</div>
+          <h2 style={{ color: "#4CAF50", marginTop: "16px", fontSize: "2rem" }}>Order Placed Successfully!</h2>
+          <p style={{ opacity: 0.7, marginTop: "8px", fontSize: "1.05rem" }}>Happy Diwali! Your order is confirmed.</p>
 
-          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: 'rgba(255,255,255,0.02)', padding: '25px', borderRadius: '15px', border: '1px solid var(--border)' }}>
-            <h3 style={{ marginBottom: '15px', borderBottom: '1px solid var(--border)', paddingBottom: '10px', marginTop: 0 }}>Order Details</h3>
-            <div style={{ marginBottom: '20px', fontSize: '0.95rem', opacity: 0.9, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div><strong>Name:</strong> {placedOrder.name}</div>
-              <div><strong>Mobile:</strong> {placedOrder.mobile}</div>
-              <div><strong>Address:</strong> {placedOrder.address}</div>
+          {/* Order Summary Card */}
+          <div style={{ maxWidth: "600px", margin: "32px auto 0", textAlign: "left", ...cardStyle, padding: "28px" }}>
+            <h3 style={{ margin: "0 0 20px", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "12px", fontSize: "1.1rem", color: "var(--accent)" }}>
+              Order Summary
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "0.9rem", marginBottom: "20px" }}>
+              <div style={{ opacity: 0.6 }}>Customer</div><div style={{ fontWeight: 600 }}>{placedOrder.name}</div>
+              <div style={{ opacity: 0.6 }}>Mobile</div><div style={{ fontWeight: 600 }}>{placedOrder.mobile}</div>
+              <div style={{ opacity: 0.6 }}>Address</div><div style={{ fontWeight: 600 }}>{placedOrder.address}</div>
             </div>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ marginBottom: '10px', opacity: 0.8 }}>Items Ordered:</h4>
+
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "16px" }}>
               {placedOrder.items.map((item, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px dashed var(--border)' }}>
-                  <span>{item.name} (x{item.quantity})</span>
-                  <span>₹{((item.sellingPrice || item.price) * item.quantity).toLocaleString()}</span>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px dashed rgba(255,255,255,0.06)", fontSize: "0.9rem" }}>
+                  <span style={{ opacity: 0.85 }}>{item.name} <span style={{ opacity: 0.5 }}>×{item.quantity}</span></span>
+                  <span style={{ fontWeight: 600, color: "var(--accent)" }}>₹{((item.sellingPrice || item.price) * item.quantity).toLocaleString()}</span>
                 </div>
               ))}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--accent)', marginTop: '20px', paddingTop: '15px', borderTop: '2px solid var(--border)' }}>
-              <span>Total Payable</span>
-              <span>₹{placedOrder.total.toLocaleString()}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "12px", fontSize: "0.9rem", color: "#4CAF50" }}>
+                <span>Diwali Savings</span>
+                <span>-₹{placedOrder.savings.toLocaleString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px", fontSize: "1.3rem", fontWeight: 700, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: "10px" }}>
+                <span>Total Paid</span>
+                <span style={{ color: "var(--accent)" }}>₹{placedOrder.total.toLocaleString()}</span>
+              </div>
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-            <p style={{ opacity: 0.9, fontSize: '1.1rem' }}>Please send your order details to our WhatsApp to confirm delivery.</p>
-            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <a 
-                href={generateWhatsAppLink(placedOrder)} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="premium-button"
-                style={{ backgroundColor: '#25D366', borderColor: '#25D366', color: 'white', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '15px 30px', fontSize: '1.1rem', boxShadow: '0 4px 15px rgba(37, 211, 102, 0.3)' }}
-              >
-                <span style={{ fontSize: '1.3rem' }}>📱</span> Send Order to WhatsApp
-              </a>
-              <button 
-                onClick={() => downloadPDF(placedOrder)}
-                className="premium-button"
-                style={{ backgroundColor: '#0284c7', borderColor: '#0284c7', color: 'white', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '15px 30px', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(2, 132, 199, 0.3)' }}
-              >
-                <span style={{ fontSize: '1.3rem' }}>📄</span> Download Invoice PDF
-              </button>
-            </div>
-            <button onClick={() => { setOrderSuccess(false); setPlacedOrder(null); }} style={{ background: 'none', border: 'none', color: 'var(--text)', opacity: 0.7, cursor: 'pointer', textDecoration: 'underline', marginTop: '10px', fontSize: '1rem' }}>
-              ← Back to Shopping
+          {/* Action Buttons */}
+          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", justifyContent: "center", marginTop: "32px" }}>
+            <a
+              href={generateWhatsAppLink(placedOrder)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="premium-button"
+              style={{ backgroundColor: "#25D366", color: "white", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "10px", padding: "14px 28px", fontSize: "1rem", borderRadius: "50px", boxShadow: "0 6px 20px rgba(37,211,102,0.35)", fontWeight: 700 }}
+            >
+              <span>📱</span> Send via WhatsApp
+            </a>
+            <button
+              onClick={() => downloadPDF(placedOrder)}
+              className="premium-button"
+              style={{ backgroundColor: "#0ea5e9", color: "white", display: "inline-flex", alignItems: "center", gap: "10px", padding: "14px 28px", fontSize: "1rem", borderRadius: "50px", cursor: "pointer", boxShadow: "0 6px 20px rgba(14,165,233,0.35)", fontWeight: 700, border: "none" }}
+            >
+              <span>📄</span> Download Invoice
             </button>
           </div>
+
+          <button
+            onClick={() => { setOrderSuccess(false); setPlacedOrder(null); }}
+            style={{ marginTop: "24px", background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", fontSize: "0.9rem", textDecoration: "underline" }}
+          >
+            ← Continue Shopping
+          </button>
         </div>
+
       ) : cart.length === 0 ? (
-        <div className="animate-fade-in" style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
-          <span style={{ fontSize: '4rem' }}>🛒</span>
-          <h2 style={{ marginTop: '20px' }}>Your cart is empty</h2>
-          <p style={{ opacity: 0.6 }}>Add some amazing fireworks to your cart to celebrate!</p>
+        /* ── EMPTY CART ── */
+        <div className="animate-fade-in" style={{ ...cardStyle, textAlign: "center", padding: "100px 24px" }}>
+          <div style={{ fontSize: "4.5rem" }}>🛒</div>
+          <h2 style={{ marginTop: "20px", fontSize: "1.6rem" }}>Your cart is empty</h2>
+          <p style={{ opacity: 0.5, marginTop: "8px" }}>Add some amazing fireworks and celebrate Diwali!</p>
         </div>
+
       ) : (
+        /* ── MAIN CART VIEW ── */
         <div className="cart-layout">
-          {/* Cart Items List */}
-          <div className="staggered-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* ─── LEFT: Cart Items ─── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px", marginBottom: "4px" }}>
+              <h2 style={{ margin: 0, fontSize: "1.1rem", opacity: 0.8, fontWeight: 600 }}>
+                {cart.reduce((s, i) => s + i.quantity, 0)} items in your cart
+              </h2>
+            </div>
+
             {cart.map((item, index) => (
-              <div key={index} className="product-card cart-item-card">
-                <div style={{ position: 'relative' }}>
-                  <img src={item.image || item.imageUrl || "https://via.placeholder.com/80"} alt={item.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px' }} />
+              <div
+                key={index}
+                className="animate-fade-in"
+                style={{
+                  ...cardStyle,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  padding: "16px",
+                  transition: "border-color 0.3s",
+                }}
+              >
+                {/* Image */}
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <img
+                    src={item.image || item.imageUrl || "https://via.placeholder.com/80"}
+                    alt={item.name}
+                    style={{ width: "76px", height: "76px", objectFit: "cover", borderRadius: "12px", display: "block" }}
+                  />
                   {item.discount > 0 && (
-                     <div style={{ position: 'absolute', top: '-10px', right: '-10px', backgroundColor: 'var(--accent-secondary)', color: 'white', padding: '4px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 'bold', boxShadow: '0 0 10px rgba(0,0,0,0.5)' }}>-{item.discount}%</div>
+                    <div style={{ position: "absolute", top: "-8px", right: "-8px", background: "linear-gradient(135deg,#ff6600,#ff4500)", color: "white", padding: "3px 7px", borderRadius: "8px", fontSize: "0.65rem", fontWeight: 700 }}>
+                      -{item.discount}%
+                    </div>
                   )}
                 </div>
-                <div className="cart-item-details">
-                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{item.name}</h3>
-                  <p style={{ margin: 0, opacity: 0.6, fontSize: '0.85rem' }}>{item.category} (x{item.quantity})</p>
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '5px', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '1.2rem' }}>₹{(item.sellingPrice || item.price).toLocaleString()}</span>
-                    {item.mrp && <span style={{ textDecoration: 'line-through', opacity: 0.4, fontSize: '0.9rem' }}>₹{item.mrp.toLocaleString()}</span>}
+
+                {/* Details */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h3 style={{ margin: "0 0 4px", fontSize: "1rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</h3>
+                  <p style={{ margin: 0, opacity: 0.5, fontSize: "0.8rem" }}>{item.category}</p>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "6px" }}>
+                    <span style={{ color: "var(--accent)", fontWeight: 700, fontSize: "1.1rem" }}>₹{(item.sellingPrice || item.price).toLocaleString()}</span>
+                    {item.mrp && <span style={{ textDecoration: "line-through", opacity: 0.35, fontSize: "0.85rem" }}>₹{item.mrp.toLocaleString()}</span>}
                   </div>
                 </div>
-                <div className="cart-item-controls">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '5px', borderRadius: '10px', border: '1px solid var(--border)' }}>
-                    <button 
-                      onClick={() => updateQuantity(item._id, -1)} 
-                      style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer' }}
+
+                {/* Controls */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", padding: "4px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <button
+                      onClick={() => updateQuantity(item._id, -1)}
+                      style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "none", width: "30px", height: "30px", borderRadius: "7px", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}
                     >−</button>
-                    <span style={{ minWidth: '20px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</span>
-                    <button 
-                      onClick={() => updateQuantity(item._id, 1)} 
-                      style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer' }}
+                    <span style={{ minWidth: "24px", textAlign: "center", fontWeight: 700, fontSize: "0.95rem" }}>{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item._id, 1)}
+                      style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "none", width: "30px", height: "30px", borderRadius: "7px", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}
                     >+</button>
                   </div>
-
-                  <button onClick={() => removeFromCart(item._id)} style={{ backgroundColor: 'rgba(255,68,68,0.1)', color: '#ff4444', border: '1px solid rgba(255,68,68,0.2)', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.3s' }} onMouseEnter={(e) => { e.target.style.backgroundColor='#ff4444'; e.target.style.color='#fff'; }} onMouseLeave={(e) => { e.target.style.backgroundColor='rgba(255,68,68,0.1)'; e.target.style.color='#ff4444'; }}>🗑️</button>
+                  <button
+                    onClick={() => removeFromCart(item._id)}
+                    style={{ background: "rgba(255,68,68,0.1)", color: "#ff5555", border: "1px solid rgba(255,68,68,0.2)", width: "36px", height: "36px", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.95rem", transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#ff4444"; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,68,68,0.1)"; e.currentTarget.style.color = "#ff5555"; }}
+                  >🗑</button>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Checkout & Summary */}
-          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-            {/* Customer Details */}
-            <div className="product-card" style={{ padding: '25px', borderRadius: '20px' }}>
-              <h2 style={{ fontSize: '1.3rem', marginBottom: '20px' }}>📋 Checkout Details</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {/* ─── RIGHT: Checkout Panel ─── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+            {/* Customer Details Form */}
+            <div style={{ ...cardStyle, padding: "28px" }}>
+              <h2 style={{ margin: "0 0 24px", fontSize: "1.15rem", display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ background: "linear-gradient(135deg,#ff6600,#ff4500)", padding: "6px 10px", borderRadius: "10px", fontSize: "1rem" }}>📋</span>
+                Checkout Details
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
                 <div>
-                  <label style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '5px', display: 'block' }}>Full Name</label>
-                  <input type="text" className="search-input" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Your Name" />
+                  <label style={labelStyle}>Full Name</label>
+                  <input
+                    type="text"
+                    style={inputStyle}
+                    value={customerName}
+                    onChange={e => setCustomerName(e.target.value)}
+                    placeholder="Enter your full name"
+                    onFocus={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.boxShadow = "0 0 0 3px rgba(255,215,0,0.1)"; }}
+                    onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.12)"; e.target.style.boxShadow = "none"; }}
+                  />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '5px', display: 'block' }}>Mobile Number</label>
-                  <input type="tel" className="search-input" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit number" />
+                  <label style={labelStyle}>Mobile Number</label>
+                  <input
+                    type="tel"
+                    style={inputStyle}
+                    value={mobileNumber}
+                    onChange={e => setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    placeholder="10-digit mobile number"
+                    onFocus={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.boxShadow = "0 0 0 3px rgba(255,215,0,0.1)"; }}
+                    onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.12)"; e.target.style.boxShadow = "none"; }}
+                  />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '5px', display: 'block' }}>Email Address</label>
-                  <input type="email" className="search-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your.email@example.com" />
+                  <label style={labelStyle}>Email Address</label>
+                  <input
+                    type="email"
+                    style={inputStyle}
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    onFocus={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.boxShadow = "0 0 0 3px rgba(255,215,0,0.1)"; }}
+                    onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.12)"; e.target.style.boxShadow = "none"; }}
+                  />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '5px', display: 'block' }}>Delivery Address</label>
-                  <textarea className="search-input" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full delivery address" style={{ height: '80px', resize: 'vertical' }} />
+                  <label style={labelStyle}>Delivery Address</label>
+                  <textarea
+                    style={{ ...inputStyle, height: "90px", resize: "vertical", fontFamily: "inherit" }}
+                    value={address}
+                    onChange={e => setAddress(e.target.value)}
+                    placeholder="Enter your full delivery address"
+                    onFocus={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.boxShadow = "0 0 0 3px rgba(255,215,0,0.1)"; }}
+                    onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.12)"; e.target.style.boxShadow = "none"; }}
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Price Summary */}
-            <div className="product-card" style={{ padding: '25px', borderRadius: '20px', border: '2px solid var(--accent) !important' }}>
-              <h2 style={{ fontSize: '1.3rem', marginBottom: '20px' }}>💰 Order Summary</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
-                  <span>Subtotal ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
+            {/* Order Summary */}
+            <div style={{ ...cardStyle, padding: "28px", border: "1px solid rgba(255,215,0,0.25)" }}>
+              <h2 style={{ margin: "0 0 20px", fontSize: "1.15rem", display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ background: "linear-gradient(135deg,#ffd700,#ff8c00)", padding: "6px 10px", borderRadius: "10px", fontSize: "1rem" }}>💰</span>
+                Order Summary
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", opacity: 0.75, fontSize: "0.95rem" }}>
+                  <span>Subtotal ({cart.reduce((s, i) => s + i.quantity, 0)} items)</span>
                   <span>₹{originalTotal.toLocaleString()}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#4CAF50' }}>
-                  <span>Diwali Savings 🧨</span>
-                  <span>-₹{totalSavings.toLocaleString()}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.5rem', fontWeight: 'bold', marginTop: '10px', borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
-                  <span>Total Payable</span>
-                  <span style={{ color: 'var(--accent)' }}>₹{total.toLocaleString()}</span>
+                {totalSavings > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", color: "#4ade80", fontSize: "0.95rem" }}>
+                    <span>🎊 Diwali Savings</span>
+                    <span>-₹{totalSavings.toLocaleString()}</span>
+                  </div>
+                )}
+                <div style={{ height: "1px", background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.5rem", fontWeight: 700 }}>
+                  <span>Total</span>
+                  <span style={{ color: "var(--accent)" }}>₹{total.toLocaleString()}</span>
                 </div>
               </div>
-              <button onClick={handleCheckout} disabled={isPlacingOrder} className="premium-button" style={{ width: '100%', marginTop: '30px', padding: '15px !important', fontSize: '1.2rem' }}>
-                {isPlacingOrder ? "⌛ Ordering..." : "🚀 Place Diwali Order"}
+
+              <button
+                onClick={handleCheckout}
+                disabled={isPlacingOrder}
+                className="premium-button"
+                style={{ width: "100%", marginTop: "24px", padding: "16px", fontSize: "1.1rem", borderRadius: "14px", cursor: isPlacingOrder ? "not-allowed" : "pointer", opacity: isPlacingOrder ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", border: "none" }}
+              >
+                {isPlacingOrder ? (
+                  <>⏳ Placing Order...</>
+                ) : (
+                  <>🚀 Place Diwali Order</>
+                )}
               </button>
+
+              <p style={{ textAlign: "center", marginTop: "12px", fontSize: "0.78rem", opacity: 0.4 }}>
+                PDF invoice will auto-download &amp; WhatsApp will open after order placement
+              </p>
             </div>
           </div>
         </div>
