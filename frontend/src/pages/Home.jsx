@@ -147,6 +147,46 @@ function Home({ products, cart, addToCart, updateQuantity }) {
         </main>
       </div>
     </div>
+
+      {/* ✅ SEO Section — helps Google rank for "Sivakasi crackers" */}
+      <section style={{
+        maxWidth: '1100px',
+        margin: '60px auto 0',
+        padding: '40px 30px',
+        background: 'rgba(255,215,0,0.04)',
+        border: '1px solid rgba(255,215,0,0.1)',
+        borderRadius: '20px',
+        color: '#aaa',
+        lineHeight: '1.9',
+        fontSize: '0.92rem'
+      }}>
+        <h2 style={{ color: '#ffd700', marginBottom: '16px', fontSize: '1.3rem' }}>
+          Buy Sivakasi Crackers Online — Jayasuriya Crackers
+        </h2>
+        <p>
+          Welcome to <strong style={{ color: '#fff' }}>Jayasuriya Crackers</strong> — your trusted destination to
+          <strong style={{ color: '#ffd700' }}> buy Sivakasi crackers online</strong> at unbeatable factory-direct prices.
+          Located in the heart of <strong style={{ color: '#fff' }}>Sivakasi, Tamil Nadu</strong> — the fireworks capital of India —
+          we bring you the finest quality Diwali crackers, sparklers, flower pots, aerial shots, and ground chakkars
+          delivered safely to your doorstep.
+        </p>
+        <h3 style={{ color: '#ffd700', margin: '20px 0 10px', fontSize: '1rem' }}>
+          Why Choose Our Sivakasi Crackers?
+        </h3>
+        <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <li>🏭 Direct from Sivakasi factories — lowest prices guaranteed</li>
+          <li>🔒 100% safety-certified crackers approved by Tamil Nadu authorities</li>
+          <li>🚀 Fast home delivery across Tamil Nadu and all over India</li>
+          <li>🎁 Diwali gift packs, bulk orders & wholesale crackers available</li>
+          <li>📞 Personal support on WhatsApp: <strong style={{ color: '#fff' }}>+91 9442275989</strong></li>
+        </ul>
+        <p style={{ marginTop: '16px' }}>
+          Whether you're searching for <em>Sivakasi crackers near me</em>, <em>online crackers shop Tamil Nadu</em>,
+          or the <em>best Diwali fireworks deals</em> — Jayasuriya Crackers is your one-stop shop.
+          We've been serving happy customers for over <strong style={{ color: '#ffd700' }}>10 years</strong> and counting. 🎆
+        </p>
+      </section>
+  </div>
   );
 }
 
