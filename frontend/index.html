@@ -38,7 +38,7 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "LocalBusiness",
+      "@type": "Store",
       "name": "Jayasuriya Crackers",
       "description": "Premium Sivakasi crackers and fireworks shop. Buy Diwali crackers, sparklers, flower pots and more at factory-direct prices. Trusted by 10,000+ customers across Tamil Nadu.",
       "url": "https://jaya-suriya-crackers-e-commerece-si.vercel.app",
@@ -58,7 +58,6 @@
       },
       "openingHours": "Mo-Su 09:00-21:00",
       "priceRange": "₹₹",
-      "servesCuisine": "Fireworks & Crackers",
       "sameAs": [
         "https://maps.app.goo.gl/2Ri5C9nayPUNVcMs6"
       ],
@@ -66,11 +65,31 @@
         "@type": "OfferCatalog",
         "name": "Sivakasi Crackers & Fireworks",
         "itemListElement": [
-          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Diwali Crackers" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Sparklers" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Flower Pots" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Aerial Shots" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Ground Chakkars" } }
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "item": { "@type": "Product", "name": "Diwali Crackers", "description": "Premium Diwali crackers from Sivakasi" }
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "item": { "@type": "Product", "name": "Sparklers", "description": "Safety sparklers for all ages" }
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "item": { "@type": "Product", "name": "Flower Pots", "description": "Colourful flower pot fireworks" }
+          },
+          {
+            "@type": "ListItem",
+            "position": 4,
+            "item": { "@type": "Product", "name": "Aerial Shots", "description": "High-altitude aerial fireworks" }
+          },
+          {
+            "@type": "ListItem",
+            "position": 5,
+            "item": { "@type": "Product", "name": "Ground Chakkars", "description": "Spinning ground chakkar fireworks" }
+          }
         ]
       }
     }
