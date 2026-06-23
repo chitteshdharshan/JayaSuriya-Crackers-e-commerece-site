@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import AddProduct from "./components/AddProduct";
@@ -141,6 +142,7 @@ function App() {
             <Route path="/add-product" element={isAdmin ? <AddProduct fetchProducts={fetchProducts} /> : <AdminLogin setIsAdmin={setIsAdmin} />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </Router>
   );
