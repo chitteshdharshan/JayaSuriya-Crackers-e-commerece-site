@@ -14,11 +14,11 @@ function Home({ products, cart, addToCart, updateQuantity }) {
     // 🎉 Trigger welcome fireworks on Home page load
     for (let i = 0; i < 10; i++) {
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('trigger-firework', { 
-          detail: { 
-            x: Math.random() * window.innerWidth, 
+        window.dispatchEvent(new CustomEvent('trigger-firework', {
+          detail: {
+            x: Math.random() * window.innerWidth,
             y: Math.random() * (window.innerHeight * 0.7) // upper 70% of screen
-          } 
+          }
         }));
       }, i * 250);
     }
@@ -37,7 +37,7 @@ function Home({ products, cart, addToCart, updateQuantity }) {
     const matchesSearch = p.name.toLowerCase().includes(searchLower) ||
       (p.description && p.description.toLowerCase().includes(searchLower)) ||
       (p.category && p.category.toLowerCase().includes(searchLower));
-      
+
     const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
 
     return matchesSearch && matchesCategory;
@@ -48,14 +48,14 @@ function Home({ products, cart, addToCart, updateQuantity }) {
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div style={{ 
-      padding: "40px 20px", 
-      maxWidth: "1400px", 
-      margin: "0 auto", 
+    <div style={{
+      padding: "40px 20px",
+      maxWidth: "1400px",
+      margin: "0 auto",
     }}>
       <header className="animate-fade-in" style={{ textAlign: 'center', marginBottom: '60px' }}>
         <h1 style={{ marginBottom: '10px' }}>
-          Jayasuriya Crackers 🎆
+          Jayasuriya Crackers
         </h1>
         <p style={{ fontSize: '1.2rem', opacity: '0.8', maxWidth: '600px', margin: '0 auto' }}>
           Celebrate this Diwali with our premium range of fireworks. Safe, vibrant, and delivered to your doorstep.
@@ -66,7 +66,7 @@ function Home({ products, cart, addToCart, updateQuantity }) {
         <aside className="sidebar animate-fade-in">
           <h3>Categories</h3>
           {categories.map(cat => (
-            <button 
+            <button
               key={cat}
               className={`category-btn ${selectedCategory === cat ? 'active' : ''}`}
               onClick={() => { setSelectedCategory(cat); setCurrentPage(1); }}
@@ -85,9 +85,9 @@ function Home({ products, cart, addToCart, updateQuantity }) {
               borderRadius: '20px',
               border: '1px dashed var(--border)'
             }}>
-               <span style={{ fontSize: '3rem' }}>🔍</span>
-               <h2 style={{ marginTop: '20px' }}>No products found</h2>
-               <p style={{ opacity: '0.6' }}>We couldn't find anything matching "{searchTerm}"</p>
+              <span style={{ fontSize: '3rem' }}>🔍</span>
+              <h2 style={{ marginTop: '20px' }}>No products found</h2>
+              <p style={{ opacity: '0.6' }}>We couldn't find anything matching "{searchTerm}"</p>
             </div>
           ) : (
             <>
@@ -96,10 +96,10 @@ function Home({ products, cart, addToCart, updateQuantity }) {
                   const cartItem = cart.find(item => item._id === p._id);
                   const quantity = cartItem ? cartItem.quantity : 0;
                   return (
-                    <ProductCard 
-                      key={p._id} 
-                      product={p} 
-                      addToCart={addToCart} 
+                    <ProductCard
+                      key={p._id}
+                      product={p}
+                      addToCart={addToCart}
                       quantity={quantity}
                       updateQuantity={updateQuantity}
                     />
@@ -108,7 +108,7 @@ function Home({ products, cart, addToCart, updateQuantity }) {
               </div>
 
               {totalPages > 1 && (
-                <div className="animate-fade-in" style={{ 
+                <div className="animate-fade-in" style={{
                   marginTop: "50px",
                   display: "flex",
                   justifyContent: "center",
@@ -118,8 +118,8 @@ function Home({ products, cart, addToCart, updateQuantity }) {
                   <button
                     className="premium-button"
                     onClick={() => {
-                       setCurrentPage(Math.max(1, currentPage - 1));
-                       window.scrollTo({ top: 0, behavior: 'smooth' });
+                      setCurrentPage(Math.max(1, currentPage - 1));
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     disabled={currentPage === 1}
                     style={{ opacity: currentPage === 1 ? 0.5 : 1 }}
@@ -132,8 +132,8 @@ function Home({ products, cart, addToCart, updateQuantity }) {
                   <button
                     className="premium-button"
                     onClick={() => {
-                       setCurrentPage(Math.min(totalPages, currentPage + 1));
-                       window.scrollTo({ top: 0, behavior: 'smooth' });
+                      setCurrentPage(Math.min(totalPages, currentPage + 1));
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     disabled={currentPage === totalPages}
                     style={{ opacity: currentPage === totalPages ? 0.5 : 1 }}
