@@ -556,7 +556,7 @@ if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
 
   // Catch-all: return index.html for any non-API route (fixes 404 on page reload)
-  app.get("*", (req, res) => {
+  app.get("/{*splat}", (req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
 } else {
