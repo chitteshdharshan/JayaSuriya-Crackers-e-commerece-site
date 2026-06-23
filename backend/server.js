@@ -25,6 +25,9 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_PASS !
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    tls: {
+      rejectUnauthorized: false
+    }
   });
 } else {
   console.warn("⚠️ Email credentials not configured. OTP will not be sent via email. Set EMAIL_USER, EMAIL_PASS, EMAIL_HOST, EMAIL_PORT in .env");

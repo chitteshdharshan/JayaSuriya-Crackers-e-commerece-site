@@ -164,18 +164,18 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
           <p style={{ opacity: 0.6 }}>Add some amazing fireworks to your cart to celebrate!</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '40px', alignItems: 'start' }}>
+        <div className="cart-layout">
           {/* Cart Items List */}
           <div className="staggered-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {cart.map((item, index) => (
-              <div key={index} className="product-card" style={{ display: 'flex', alignItems: 'center', padding: '15px', borderRadius: '15px', gap: '20px' }}>
+              <div key={index} className="product-card cart-item-card">
                 <div style={{ position: 'relative' }}>
                   <img src={item.image || item.imageUrl || "https://via.placeholder.com/80"} alt={item.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px' }} />
                   {item.discount > 0 && (
                      <div style={{ position: 'absolute', top: '-10px', right: '-10px', backgroundColor: 'var(--accent-secondary)', color: 'white', padding: '4px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 'bold', boxShadow: '0 0 10px rgba(0,0,0,0.5)' }}>-{item.discount}%</div>
                   )}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="cart-item-details">
                   <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{item.name}</h3>
                   <p style={{ margin: 0, opacity: 0.6, fontSize: '0.85rem' }}>{item.category} (x{item.quantity})</p>
                   <div style={{ display: 'flex', gap: '10px', marginTop: '5px', alignItems: 'center' }}>
@@ -183,19 +183,21 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
                     {item.mrp && <span style={{ textDecoration: 'line-through', opacity: 0.4, fontSize: '0.9rem' }}>₹{item.mrp.toLocaleString()}</span>}
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '5px', borderRadius: '10px', border: '1px solid var(--border)' }}>
-                  <button 
-                    onClick={() => updateQuantity(item._id, -1)} 
-                    style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer' }}
-                  >−</button>
-                  <span style={{ minWidth: '20px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</span>
-                  <button 
-                    onClick={() => updateQuantity(item._id, 1)} 
-                    style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer' }}
-                  >+</button>
-                </div>
+                <div className="cart-item-controls">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '5px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                    <button 
+                      onClick={() => updateQuantity(item._id, -1)} 
+                      style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer' }}
+                    >−</button>
+                    <span style={{ minWidth: '20px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</span>
+                    <button 
+                      onClick={() => updateQuantity(item._id, 1)} 
+                      style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer' }}
+                    >+</button>
+                  </div>
 
-                <button onClick={() => removeFromCart(item._id)} style={{ backgroundColor: 'rgba(255,68,68,0.1)', color: '#ff4444', border: '1px solid rgba(255,68,68,0.2)', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.3s' }} onMouseEnter={(e) => { e.target.style.backgroundColor='#ff4444'; e.target.style.color='#fff'; }} onMouseLeave={(e) => { e.target.style.backgroundColor='rgba(255,68,68,0.1)'; e.target.style.color='#ff4444'; }}>🗑️</button>
+                  <button onClick={() => removeFromCart(item._id)} style={{ backgroundColor: 'rgba(255,68,68,0.1)', color: '#ff4444', border: '1px solid rgba(255,68,68,0.2)', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.3s' }} onMouseEnter={(e) => { e.target.style.backgroundColor='#ff4444'; e.target.style.color='#fff'; }} onMouseLeave={(e) => { e.target.style.backgroundColor='rgba(255,68,68,0.1)'; e.target.style.color='#ff4444'; }}>🗑️</button>
+                </div>
               </div>
             ))}
           </div>
