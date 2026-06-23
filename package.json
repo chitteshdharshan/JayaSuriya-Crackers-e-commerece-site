@@ -1,4 +1,11 @@
 {
+  "name": "jayasuriya-crackers",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd backend && node server.js",
+    "install-backend": "cd backend && npm install"
+  },
   "dependencies": {
     "mongodb": "^7.1.1"
   }
