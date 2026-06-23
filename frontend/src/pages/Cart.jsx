@@ -10,20 +10,6 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [placedOrder, setPlacedOrder] = useState(null);
-  const [canShare, setCanShare] = useState(false);
-
-  useEffect(() => {
-    if (typeof navigator !== "undefined" && navigator.canShare) {
-      try {
-        const file = new File([""], "ping.txt", { type: "text/plain" });
-        if (navigator.canShare({ files: [file] })) {
-          setCanShare(true);
-        }
-      } catch (e) {
-        // not supported
-      }
-    }
-  }, []);
 
   const total = cart.reduce((sum, item) => (sum + (item.sellingPrice || item.price || 0) * item.quantity), 0);
   const originalTotal = cart.reduce((sum, item) => (sum + (item.mrp || 0) * item.quantity), 0);
@@ -44,15 +30,8 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
 
   const generateWhatsAppLink = (order, pdfUrl) => {
     const adminNumber = "917373073989";
-    let text = `*New Order from ${order.name}*\n\n`;
+    let text = `*New Order from ${order.name}*\n`;
     text += `*Mobile:* ${order.mobile}\n`;
-    text += `*Address:* ${order.address}\n\n`;
-    text += `*Order Items:*\n`;
-    order.items.forEach((item, index) => {
-      text += `${index + 1}. ${item.name} - ${item.category} (x${item.quantity}) = Rs.${((item.sellingPrice || item.price) * item.quantity).toLocaleString()}\n`;
-    });
-    text += `\n*Total Payable:* Rs.${order.total.toLocaleString()}\n`;
-    text += `*Diwali Savings:* Rs.${order.savings.toLocaleString()}\n\n`;
     if (pdfUrl) {
       text += `*Invoice PDF:* ${pdfUrl}\n\n`;
     }
@@ -218,23 +197,7 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
     }
   };
 
-  const sharePDF = async (order) => {
-    try {
-      const doc = generatePDF(order);
-      const pdfBlob = doc.output("blob");
-      const filename = `Jayasuriya_Order_${order.name.replace(/\s+/g, "_")}.pdf`;
-      const file = new File([pdfBlob], filename, { type: "application/pdf" });
 
-      await navigator.share({
-        files: [file],
-        title: "Jayasuriya Crackers Invoice",
-        text: `Here is the order invoice for ${order.name}.`,
-      });
-    } catch (err) {
-      console.error("Error sharing PDF invoice:", err);
-      downloadPDF(order);
-    }
-  };
 
   const handleCheckout = async () => {
     if (!customerName.trim() || !mobileNumber || !address.trim() || !email.trim()) {
@@ -414,15 +377,6 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
             >
               <span>📱</span> Send via WhatsApp
             </a>
-            {canShare && (
-              <button
-                onClick={() => sharePDF(placedOrder)}
-                className="premium-button"
-                style={{ backgroundColor: "#8b5cf6", color: "white", display: "inline-flex", alignItems: "center", gap: "10px", padding: "14px 28px", fontSize: "1rem", borderRadius: "50px", cursor: "pointer", boxShadow: "0 6px 20px rgba(139,92,246,0.35)", fontWeight: 700, border: "none" }}
-              >
-                <span>📤</span> Share Invoice File
-              </button>
-            )}
             <button
               onClick={() => downloadPDF(placedOrder)}
               className="premium-button"
