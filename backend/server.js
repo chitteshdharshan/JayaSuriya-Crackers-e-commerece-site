@@ -38,7 +38,14 @@ const otpStore = new Map();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use("/uploads", express.static("uploads"));
+
+// Ensure uploads folder exists
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
 
 // ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
@@ -335,10 +342,35 @@ app.post("/api/admin/verify-otp", async (req, res) => {
 // ✅ Place Order and Email to Admin
 app.post("/api/place-order", async (req, res) => {
   try {
-    const { name, mobile, address, email, cartItems, totalAmount } = req.body;
+    const { name, mobile, address, email, cartItems, totalAmount, pdfFile } = req.body;
 
     if (!name || !mobile || !address || !email || !cartItems || !totalAmount) {
       return res.status(400).json({ error: "Missing required order details including address and email" });
+    }
+
+    let pdfUrl = "";
+    if (pdfFile) {
+      if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_CLOUD_NAME !== "your_cloud_name") {
+        try {
+          const uploadResult = await cloudinary.uploader.upload(`data:application/pdf;base64,${pdfFile}`, {
+            resource_type: "raw",
+            public_id: `invoice_${Date.now()}`,
+            format: "pdf"
+          });
+          pdfUrl = uploadResult.secure_url;
+          console.log("📄 PDF uploaded to Cloudinary:", pdfUrl);
+        } catch (cloudinaryErr) {
+          console.error("Cloudinary PDF upload failed, falling back to local file:", cloudinaryErr);
+        }
+      }
+
+      if (!pdfUrl) {
+        const pdfFilename = `invoice_${Date.now()}_${crypto.randomBytes(4).toString("hex")}.pdf`;
+        const relativePath = `uploads/${pdfFilename}`;
+        fs.writeFileSync(relativePath, Buffer.from(pdfFile, "base64"));
+        pdfUrl = `${req.protocol}://${req.get("host")}/uploads/${pdfFilename}`;
+        console.log("📄 PDF saved locally:", pdfUrl);
+      }
     }
 
     const itemsHTML = cartItems.map(item => `
@@ -452,6 +484,15 @@ app.post("/api/place-order", async (req, res) => {
       </html>
     `;
 
+    const attachments = [];
+    if (pdfFile) {
+      attachments.push({
+        filename: `Jayasuriya_Order_${name.replace(/\s+/g, "_")}.pdf`,
+        content: Buffer.from(pdfFile, "base64"),
+        contentType: "application/pdf"
+      });
+    }
+
     if (emailTransporter) {
       // Send email to Admin
       await emailTransporter.sendMail({
@@ -459,6 +500,7 @@ app.post("/api/place-order", async (req, res) => {
         to: adminEmail,
         subject: `🚨 New Order from ${name} - ₹${totalAmount.toLocaleString()}`,
         html: orderHTML,
+        attachments,
       });
       console.log(`📧 Order email sent to admin for ${name}`);
 
@@ -468,6 +510,7 @@ app.post("/api/place-order", async (req, res) => {
         to: email,
         subject: `🎉 Order Placed Successfully! - JayaSuriya Crackers`,
         html: customerHTML,
+        attachments,
       });
       console.log(`📧 Confimation email sent to customer at ${email}`);
     } else {
@@ -479,7 +522,10 @@ app.post("/api/place-order", async (req, res) => {
       console.log("----------------------------------------------");
     }
 
-    res.json({ message: "Order placed successfully! Admin will contact you soon." });
+    res.json({ 
+      message: "Order placed successfully! Admin will contact you soon.",
+      pdfUrl: pdfUrl
+    });
   } catch (err) {
     console.error("Error placing order:", err);
     res.status(500).json({ error: "Failed to place order" });

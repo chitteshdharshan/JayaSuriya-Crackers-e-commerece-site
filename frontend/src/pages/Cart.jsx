@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -10,6 +10,20 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [placedOrder, setPlacedOrder] = useState(null);
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.canShare) {
+      try {
+        const file = new File([""], "ping.txt", { type: "text/plain" });
+        if (navigator.canShare({ files: [file] })) {
+          setCanShare(true);
+        }
+      } catch (e) {
+        // not supported
+      }
+    }
+  }, []);
 
   const total = cart.reduce((sum, item) => (sum + (item.sellingPrice || item.price || 0) * item.quantity), 0);
   const originalTotal = cart.reduce((sum, item) => (sum + (item.mrp || 0) * item.quantity), 0);
@@ -28,7 +42,7 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
     }
   };
 
-  const generateWhatsAppLink = (order) => {
+  const generateWhatsAppLink = (order, pdfUrl) => {
     const adminNumber = "917373073989";
     let text = `*New Order from ${order.name}*\n\n`;
     text += `*Mobile:* ${order.mobile}\n`;
@@ -39,159 +53,186 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
     });
     text += `\n*Total Payable:* Rs.${order.total.toLocaleString()}\n`;
     text += `*Diwali Savings:* Rs.${order.savings.toLocaleString()}\n\n`;
+    if (pdfUrl) {
+      text += `*Invoice PDF:* ${pdfUrl}\n\n`;
+    }
     text += `Please confirm my order. Thank you!`;
     return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
   };
 
+  const generatePDF = (order) => {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+
+    // ── Header background ──
+    doc.setFillColor(15, 52, 96);
+    doc.rect(0, 0, pageW, 48, "F");
+
+    // Gold accent strip
+    doc.setFillColor(255, 200, 0);
+    doc.rect(0, 44, pageW, 4, "F");
+
+    // Company name
+    doc.setTextColor(255, 200, 0);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("JAYASURIYA CRACKERS", 15, 20);
+
+    // Tagline
+    doc.setTextColor(200, 220, 255);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text("Premium Fireworks & Crackers", 15, 28);
+    doc.text("Phone: +91 73730 73989", 15, 34);
+
+    // Invoice label on right
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("ORDER INVOICE", pageW - 15, 20, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 220, 255);
+    doc.text(`Date: ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`, pageW - 15, 28, { align: "right" });
+    doc.text(`Order ID: JC-${Date.now().toString().slice(-6)}`, pageW - 15, 34, { align: "right" });
+
+    // ── Bill To box ──
+    doc.setFillColor(240, 246, 255);
+    doc.roundedRect(15, 54, pageW - 30, 38, 3, 3, "F");
+    doc.setDrawColor(180, 210, 255);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(15, 54, pageW - 30, 38, 3, 3, "S");
+
+    doc.setTextColor(15, 52, 96);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("BILLED TO", 20, 62);
+    doc.setDrawColor(255, 200, 0);
+    doc.setLineWidth(1);
+    doc.line(20, 64, 48, 64);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(20, 20, 20);
+    doc.text(order.name, 20, 71);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Mobile: ${order.mobile}`, 20, 78);
+
+    // Wrap long address
+    const addrLines = doc.splitTextToSize(`Address: ${order.address}`, pageW - 40);
+    doc.text(addrLines, 20, 84);
+
+    // ── Items Table ──
+    const tableHead = [["#", "Item", "Category", "Qty", "Rate (Rs)", "Amount (Rs)"]];
+    const tableBody = order.items.map((item, i) => [
+      i + 1,
+      item.name,
+      item.category || "-",
+      item.quantity,
+      Number(item.sellingPrice || item.price).toLocaleString("en-IN"),
+      Number((item.sellingPrice || item.price) * item.quantity).toLocaleString("en-IN"),
+    ]);
+
+    autoTable(doc, {
+      head: tableHead,
+      body: tableBody,
+      startY: 98,
+      theme: "grid",
+      styles: { fontSize: 9, cellPadding: 4, textColor: [30, 30, 30] },
+      headStyles: {
+        fillColor: [15, 52, 96],
+        textColor: [255, 200, 0],
+        fontStyle: "bold",
+        fontSize: 9,
+        halign: "center",
+      },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 10 },
+        3: { halign: "center", cellWidth: 14 },
+        4: { halign: "right", cellWidth: 28 },
+        5: { halign: "right", cellWidth: 30 },
+      },
+      alternateRowStyles: { fillColor: [245, 248, 255] },
+      margin: { left: 15, right: 15 },
+    });
+
+    const afterTableY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 160;
+
+    // ── Totals section ──
+    const totalsX = pageW - 80;
+    const totalsY = afterTableY + 10;
+
+    doc.setFillColor(245, 248, 255);
+    doc.roundedRect(totalsX - 5, totalsY - 6, 75, 34, 3, 3, "F");
+    doc.setDrawColor(180, 210, 255);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(totalsX - 5, totalsY - 6, 75, 34, 3, 3, "S");
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text("Subtotal:", totalsX, totalsY);
+    const pdfOriginalTotal = order.items.reduce((sum, item) => (sum + (item.mrp || 0) * item.quantity), 0);
+    doc.text(`Rs. ${Number(pdfOriginalTotal).toLocaleString("en-IN")}`, pageW - 15, totalsY, { align: "right" });
+
+    doc.setTextColor(34, 139, 34);
+    doc.text("Diwali Savings:", totalsX, totalsY + 7);
+    doc.text(`- Rs. ${Number(order.savings).toLocaleString("en-IN")}`, pageW - 15, totalsY + 7, { align: "right" });
+
+    // Total payable bold line
+    doc.setDrawColor(15, 52, 96);
+    doc.setLineWidth(0.5);
+    doc.line(totalsX - 5, totalsY + 12, pageW - 15, totalsY + 12);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 52, 96);
+    doc.text("TOTAL PAYABLE:", totalsX, totalsY + 20);
+    doc.text(`Rs. ${Number(order.total).toLocaleString("en-IN")}`, pageW - 15, totalsY + 20, { align: "right" });
+
+    // ── Footer ──
+    const footerY = afterTableY + 55;
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.3);
+    doc.line(15, footerY, pageW - 15, footerY);
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(130, 130, 130);
+    doc.text("Thank you for your order! Have a safe and happy Diwali!", pageW / 2, footerY + 7, { align: "center" });
+    doc.text("For queries, contact us on WhatsApp: +91 73730 73989", pageW / 2, footerY + 13, { align: "center" });
+
+    return doc;
+  };
+
   const downloadPDF = (order) => {
     try {
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageW = doc.internal.pageSize.getWidth();
-
-      // ── Header background ──
-      doc.setFillColor(15, 52, 96);
-      doc.rect(0, 0, pageW, 48, "F");
-
-      // Gold accent strip
-      doc.setFillColor(255, 200, 0);
-      doc.rect(0, 44, pageW, 4, "F");
-
-      // Company name
-      doc.setTextColor(255, 200, 0);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.text("JAYASURIYA CRACKERS", 15, 20);
-
-      // Tagline
-      doc.setTextColor(200, 220, 255);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.text("Premium Fireworks & Crackers", 15, 28);
-      doc.text("Phone: +91 73730 73989", 15, 34);
-
-      // Invoice label on right
-      doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.text("ORDER INVOICE", pageW - 15, 20, { align: "right" });
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(200, 220, 255);
-      doc.text(`Date: ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`, pageW - 15, 28, { align: "right" });
-      doc.text(`Order ID: JC-${Date.now().toString().slice(-6)}`, pageW - 15, 34, { align: "right" });
-
-      // ── Bill To box ──
-      doc.setFillColor(240, 246, 255);
-      doc.roundedRect(15, 54, pageW - 30, 38, 3, 3, "F");
-      doc.setDrawColor(180, 210, 255);
-      doc.setLineWidth(0.4);
-      doc.roundedRect(15, 54, pageW - 30, 38, 3, 3, "S");
-
-      doc.setTextColor(15, 52, 96);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text("BILLED TO", 20, 62);
-      doc.setDrawColor(255, 200, 0);
-      doc.setLineWidth(1);
-      doc.line(20, 64, 48, 64);
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(20, 20, 20);
-      doc.text(order.name, 20, 71);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(60, 60, 60);
-      doc.text(`Mobile: ${order.mobile}`, 20, 78);
-
-      // Wrap long address
-      const addrLines = doc.splitTextToSize(`Address: ${order.address}`, pageW - 40);
-      doc.text(addrLines, 20, 84);
-
-      // ── Items Table ──
-      const tableHead = [["#", "Item", "Category", "Qty", "Rate (Rs)", "Amount (Rs)"]];
-      const tableBody = order.items.map((item, i) => [
-        i + 1,
-        item.name,
-        item.category || "-",
-        item.quantity,
-        Number(item.sellingPrice || item.price).toLocaleString("en-IN"),
-        Number((item.sellingPrice || item.price) * item.quantity).toLocaleString("en-IN"),
-      ]);
-
-      autoTable(doc, {
-        head: tableHead,
-        body: tableBody,
-        startY: 98,
-        theme: "grid",
-        styles: { fontSize: 9, cellPadding: 4, textColor: [30, 30, 30] },
-        headStyles: {
-          fillColor: [15, 52, 96],
-          textColor: [255, 200, 0],
-          fontStyle: "bold",
-          fontSize: 9,
-          halign: "center",
-        },
-        columnStyles: {
-          0: { halign: "center", cellWidth: 10 },
-          3: { halign: "center", cellWidth: 14 },
-          4: { halign: "right", cellWidth: 28 },
-          5: { halign: "right", cellWidth: 30 },
-        },
-        alternateRowStyles: { fillColor: [245, 248, 255] },
-        margin: { left: 15, right: 15 },
-      });
-
-      const afterTableY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 160;
-
-      // ── Totals section ──
-      const totalsX = pageW - 80;
-      const totalsY = afterTableY + 10;
-
-      doc.setFillColor(245, 248, 255);
-      doc.roundedRect(totalsX - 5, totalsY - 6, 75, 34, 3, 3, "F");
-      doc.setDrawColor(180, 210, 255);
-      doc.setLineWidth(0.4);
-      doc.roundedRect(totalsX - 5, totalsY - 6, 75, 34, 3, 3, "S");
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(80, 80, 80);
-      doc.text("Subtotal:", totalsX, totalsY);
-      doc.text(`Rs. ${Number(originalTotal).toLocaleString("en-IN")}`, pageW - 15, totalsY, { align: "right" });
-
-      doc.setTextColor(34, 139, 34);
-      doc.text("Diwali Savings:", totalsX, totalsY + 7);
-      doc.text(`- Rs. ${Number(order.savings).toLocaleString("en-IN")}`, pageW - 15, totalsY + 7, { align: "right" });
-
-      // Total payable bold line
-      doc.setDrawColor(15, 52, 96);
-      doc.setLineWidth(0.5);
-      doc.line(totalsX - 5, totalsY + 12, pageW - 15, totalsY + 12);
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(15, 52, 96);
-      doc.text("TOTAL PAYABLE:", totalsX, totalsY + 20);
-      doc.text(`Rs. ${Number(order.total).toLocaleString("en-IN")}`, pageW - 15, totalsY + 20, { align: "right" });
-
-      // ── Footer ──
-      const footerY = afterTableY + 55;
-      doc.setDrawColor(220, 220, 220);
-      doc.setLineWidth(0.3);
-      doc.line(15, footerY, pageW - 15, footerY);
-
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(9);
-      doc.setTextColor(130, 130, 130);
-      doc.text("Thank you for your order! Have a safe and happy Diwali!", pageW / 2, footerY + 7, { align: "center" });
-      doc.text("For queries, contact us on WhatsApp: +91 73730 73989", pageW / 2, footerY + 13, { align: "center" });
-
+      const doc = generatePDF(order);
       doc.save(`Jayasuriya_Order_${order.name.replace(/\s+/g, "_")}.pdf`);
     } catch (err) {
       console.error("PDF generation error:", err);
       alert("Could not generate PDF. Please try again.");
+    }
+  };
+
+  const sharePDF = async (order) => {
+    try {
+      const doc = generatePDF(order);
+      const pdfBlob = doc.output("blob");
+      const filename = `Jayasuriya_Order_${order.name.replace(/\s+/g, "_")}.pdf`;
+      const file = new File([pdfBlob], filename, { type: "application/pdf" });
+
+      await navigator.share({
+        files: [file],
+        title: "Jayasuriya Crackers Invoice",
+        text: `Here is the order invoice for ${order.name}.`,
+      });
+    } catch (err) {
+      console.error("Error sharing PDF invoice:", err);
+      downloadPDF(order);
     }
   };
 
@@ -212,6 +253,21 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
     setIsPlacingOrder(true);
 
     try {
+      let pdfBase64 = "";
+      try {
+        const doc = generatePDF({
+          items: [...cart],
+          total,
+          savings: totalSavings,
+          name: customerName,
+          mobile: mobileNumber,
+          address: address.trim(),
+        });
+        pdfBase64 = doc.output("datauristring").split(",")[1];
+      } catch (pdfErr) {
+        console.error("PDF generation for placement failed:", pdfErr);
+      }
+
       const response = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/place-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -222,10 +278,14 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
           address: address.trim(),
           cartItems: cart,
           totalAmount: total,
+          pdfFile: pdfBase64,
         }),
       });
 
       if (response.ok) {
+        const responseData = await response.json();
+        const pdfUrl = responseData.pdfUrl || "";
+
         const orderData = {
           items: [...cart],
           total,
@@ -233,13 +293,19 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
           name: customerName,
           mobile: mobileNumber,
           address: address.trim(),
+          pdfUrl,
         };
 
         setPlacedOrder(orderData);
         setOrderSuccess(true);
         triggerCelebration();
 
-        // Download PDF first, then redirect
+        // Open WhatsApp tab immediately (must be synchronous – inside user gesture context)
+        // Browsers block window.open inside setTimeout/async callbacks
+        const waLink = generateWhatsAppLink(orderData, pdfUrl);
+        window.open(waLink, "_blank");
+
+        // Download PDF (browser handles this as a file download, gesture not needed)
         downloadPDF(orderData);
 
         clearCart();
@@ -247,11 +313,6 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
         setMobileNumber("");
         setAddress("");
         setEmail("");
-
-        // Small delay so PDF download can trigger before navigation
-        setTimeout(() => {
-          window.open(generateWhatsAppLink(orderData), "_blank");
-        }, 800);
       } else {
         const data = await response.json();
         alert("Error: " + (data.error || "Failed to place order"));
@@ -345,7 +406,7 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
           {/* Action Buttons */}
           <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", justifyContent: "center", marginTop: "32px" }}>
             <a
-              href={generateWhatsAppLink(placedOrder)}
+              href={generateWhatsAppLink(placedOrder, placedOrder.pdfUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="premium-button"
@@ -353,6 +414,15 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
             >
               <span>📱</span> Send via WhatsApp
             </a>
+            {canShare && (
+              <button
+                onClick={() => sharePDF(placedOrder)}
+                className="premium-button"
+                style={{ backgroundColor: "#8b5cf6", color: "white", display: "inline-flex", alignItems: "center", gap: "10px", padding: "14px 28px", fontSize: "1rem", borderRadius: "50px", cursor: "pointer", boxShadow: "0 6px 20px rgba(139,92,246,0.35)", fontWeight: 700, border: "none" }}
+              >
+                <span>📤</span> Share Invoice File
+              </button>
+            )}
             <button
               onClick={() => downloadPDF(placedOrder)}
               className="premium-button"
