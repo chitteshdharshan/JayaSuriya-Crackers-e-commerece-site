@@ -48,6 +48,7 @@ function Home({ products, cart, addToCart, updateQuantity }) {
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
 
   return (
+    <>
     <div style={{
       padding: "40px 20px",
       maxWidth: "1400px",
@@ -186,7 +187,7 @@ function Home({ products, cart, addToCart, updateQuantity }) {
           We've been serving happy customers for over <strong style={{ color: '#ffd700' }}>10 years</strong> and counting. 🎆
         </p>
       </section>
-  </div>
+    </>
   );
 }
 
