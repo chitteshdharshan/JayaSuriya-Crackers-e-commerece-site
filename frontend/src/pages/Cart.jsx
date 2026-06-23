@@ -580,7 +580,7 @@ function Cart({ cart, removeFromCart, updateQuantity, clearCart }) {
               </button>
 
               <p style={{ textAlign: "center", marginTop: "12px", fontSize: "0.78rem", opacity: 0.4 }}>
-                PDF invoice will auto-download &amp; WhatsApp will open after order placement
+                Redirect to whatsapp automatically &amp; Click send button to Confirm Order
               </p>
             </div>
           </div>
