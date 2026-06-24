@@ -21,19 +21,34 @@ dotenv.config();
 let emailTransporter = null;
 const adminEmail = "suriduke01@gmail.com";
 
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_PASS !== 'your_app_password' && process.env.EMAIL_HOST && process.env.EMAIL_PORT) {
-  emailTransporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT),
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_PASS !== 'your_app_password') {
+  const isGmail = process.env.EMAIL_HOST && process.env.EMAIL_HOST.includes('gmail');
+  
+  const transportConfig = isGmail 
+    ? {
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      }
+    : {
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT) || 587,
+        secure: process.env.EMAIL_PORT === '465',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      };
+
+  emailTransporter = nodemailer.createTransport(transportConfig);
 } else {
   console.warn("⚠️ Email credentials not configured. OTP will not be sent via email. Set EMAIL_USER, EMAIL_PASS, EMAIL_HOST, EMAIL_PORT in .env");
 }
