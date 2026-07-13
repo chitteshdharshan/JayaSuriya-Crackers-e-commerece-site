@@ -2,49 +2,23 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function AdminLogin({ setIsAdmin }) {
-  const [otp, setOtp] = useState("");
-  const [step, setStep] = useState("send"); 
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSendOtp = async (e) => {
+  const handleVerifyPassword = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/admin/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-
-      if (res.ok) {
-        setStep("verify");
-        alert("✅ OTP sent to your email");
-      } else {
-        const errorData = await res.json();
-        alert(`❌ Error: ${errorData.error || "Failed to send OTP"}`);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("❌ Server Error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    if (!otp || otp.length !== 6) {
-      alert("❌ Please enter a valid 6-digit OTP");
+    if (!password) {
+      alert("❌ Please enter a password");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/admin/verify-otp", {
+      const res = await fetch("https://jayasuriya-crackers-e-commerece-site-1.onrender.com/api/admin/verify-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp }),
+        body: JSON.stringify({ password }),
       });
 
       if (res.ok) {
@@ -52,7 +26,7 @@ function AdminLogin({ setIsAdmin }) {
         navigate("/admin/dashboard");
       } else {
         const errorData = await res.json();
-        alert(`❌ Error: ${errorData.error || "Invalid OTP"}`);
+        alert(`❌ Error: ${errorData.error || "Invalid Password"}`);
       }
     } catch (err) {
       console.error(err);
@@ -79,66 +53,34 @@ function AdminLogin({ setIsAdmin }) {
       }}>
         <h1 style={{ marginBottom: "10px" }}>🔐 Admin Login</h1>
         <p style={{ marginBottom: "30px", opacity: 0.7, fontSize: "0.9rem" }}>
-          {step === "send" ? "Secure access for inventory management" : "Enter the verification code sent to your email"}
+          Secure access for inventory management
         </p>
 
-        {step === "send" ? (
-          <form onSubmit={handleSendOtp}>
-            <button
-              type="submit"
-              disabled={loading}
-              className="premium-button"
-              style={{ width: '100%' }}
-            >
-              {loading ? "📤 Sending OTP..." : "📧 Send OTP to Email"}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ textAlign: 'left' }}>
-              <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85rem", opacity: 0.8 }}>
-                Verification Code
-              </label>
-              <input
-                type="text"
-                className="search-input"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="6-digit OTP"
-                required
-                style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '1.2rem' }}
-              />
-              <p style={{ fontSize: "0.75rem", opacity: 0.5, marginTop: "8px" }}>
-                Sent to registered administrator email
-              </p>
-            </div>
+        <form onSubmit={handleVerifyPassword} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div style={{ textAlign: 'left' }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85rem", opacity: 0.8 }}>
+              Password
+            </label>
+            <input
+              type="password"
+              className="search-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              required
+              style={{ textAlign: 'center', letterSpacing: '4px', fontSize: '1.2rem' }}
+            />
+          </div>
 
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button
-                type="button"
-                onClick={() => setStep("send")}
-                className="nav-link"
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  borderRadius: "10px",
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'rgba(255,255,255,0.05)'
-                }}
-              >
-                ← Back
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="premium-button"
-                style={{ flex: 1 }}
-              >
-                {loading ? "🔄 Verifying..." : "🔓 Login"}
-              </button>
-            </div>
-          </form>
-        )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="premium-button"
+            style={{ width: '100%' }}
+          >
+            {loading ? "🔄 Verifying..." : "🔓 Login"}
+          </button>
+        </form>
       </div>
     </div>
   );

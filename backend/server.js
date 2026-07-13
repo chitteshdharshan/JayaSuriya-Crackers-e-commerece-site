@@ -17,7 +17,7 @@ dotenv.config();
 
 // ✅ Twilio removed as per user request
 
-// ✅ Email Config for OTP
+// ✅ Email Config (for order notifications)
 let emailTransporter = null;
 const adminEmail = "suriduke01@gmail.com";
 
@@ -50,11 +50,8 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_PASS !
 
   emailTransporter = nodemailer.createTransport(transportConfig);
 } else {
-  console.warn("⚠️ Email credentials not configured. OTP will not be sent via email. Set EMAIL_USER, EMAIL_PASS, EMAIL_HOST, EMAIL_PORT in .env");
+  console.warn("⚠️ Email credentials not configured. Order emails will not be sent. Set EMAIL_USER, EMAIL_PASS, EMAIL_HOST, EMAIL_PORT in .env");
 }
-
-// ✅ In-memory OTP storage (use Redis in production)
-const otpStore = new Map();
 
 const app = express();
 app.use(cors());
@@ -215,147 +212,28 @@ app.delete("/api/products-all", async (req, res) => {
   }
 });
 
-// ================= ADMIN OTP LOGIN =================
+// ================= ADMIN LOGIN =================
 
-// ✅ Send OTP to admin email
-app.post("/api/admin/send-otp", async (req, res) => {
-  console.log("Send OTP called");
+// ✅ Verify Password
+app.post("/api/admin/verify-password", async (req, res) => {
   try {
-    // Generate random 6-digit OTP
-    const otp = crypto.randomInt(100000, 999999).toString();
+    const { password } = req.body;
 
-    // Store OTP with timestamp (expires in 5 minutes)
-    otpStore.set("admin", {
-      otp,
-      timestamp: Date.now(),
-      expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
-    });
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
 
-    // Send email
-    if (emailTransporter) {
-      try {
-        const professionalHTML = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; background: #f9f9f9; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; }
-              .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
-              .content { padding: 40px 30px; }
-              .otp-box { background: #f0f0f0; border-left: 4px solid #667eea; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center; }
-              .otp-code { font-size: 36px; font-weight: bold; color: #667eea; letter-spacing: 2px; margin: 15px 0; font-family: 'Courier New', monospace; }
-              .info { font-size: 14px; color: #666; line-height: 1.8; }
-              .footer { background: #f0f0f0; padding: 20px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #ddd; }
-              .warning { color: #ff6b6b; font-weight: 600; margin: 10px 0; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h1>🔐 Admin Login</h1>
-                <p>JayaSuriya Admin Panel</p>
-              </div>
-              
-              <div class="content">
-                <p>Hello Admin,</p>
-                
-                <p>You have requested to log in to your admin panel. Use the OTP below to verify your identity:</p>
-                
-                <div class="otp-box">
-                  <p style="margin: 0; font-size: 14px; color: #666;">Your One-Time Password (OTP)</p>
-                  <div class="otp-code">${otp}</div>
-                  <p style="margin: 10px 0 0 0; font-size: 13px; color: #999;">Valid for 5 minutes</p>
-                </div>
-                
-                <div class="info">
-                  <p><strong>Important Security Information:</strong></p>
-                  <ul style="margin: 10px 0; padding-left: 20px;">
-                    <li>Never share this OTP with anyone</li>
-                    <li>JayaSuriya support will never ask for your OTP</li>
-                    <li>This OTP expires in 5 minutes</li>
-                    <li>If you didn't request this OTP, please ignore this email</li>
-                  </ul>
-                </div>
-                
-                <p style="margin-top: 20px; font-size: 13px; color: #999;">
-                  <strong>Didn't request this OTP?</strong> If this wasn't you, please secure your account immediately.
-                </p>
-              </div>
-              
-              <div class="footer">
-                <p style="margin: 0 0 8px 0;">JayaSuriya Admin Panel</p>
-                <p style="margin: 0;">© 2026 All rights reserved. This is an automated email, please do not reply.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
-
-        await emailTransporter.sendMail({
-          from: `"JayaSuriya Admin" <${process.env.EMAIL_USER}>`,
-          to: adminEmail,
-          subject: "🔐 Your Admin Login OTP - Valid for 5 Minutes",
-          text: `Your admin login OTP is: ${otp}. Valid for 5 minutes. Never share this OTP with anyone.`,
-          html: professionalHTML,
-        });
-        console.log(`📧 Professional OTP email sent to ${adminEmail}`);
-      } catch (emailError) {
-        console.error("Email sending failed:", emailError);
-        console.log(`📧 DEMO: OTP for ${adminEmail}: ${otp} (Email not configured properly)`);
-        // Still return success for demo purposes
-      }
+    if (password === "626189jp") {
+      res.json({
+        message: "Login successful",
+        isAdmin: true
+      });
     } else {
-      console.log(`📧 DEMO: OTP for ${adminEmail}: ${otp} (Email not configured)`);
+      res.status(401).json({ error: "Invalid Password" });
     }
-
-    res.json({
-      message: "OTP sent successfully to your email"
-    });
   } catch (err) {
-    console.error("Error sending OTP:", err);
-    res.status(500).json({ error: "Failed to send OTP" });
-  }
-});
-
-// ✅ Verify OTP
-app.post("/api/admin/verify-otp", async (req, res) => {
-  try {
-    const { otp } = req.body;
-
-    // Validate input
-    if (!otp) {
-      return res.status(400).json({ error: "OTP is required" });
-    }
-
-    // Check if OTP exists and is not expired
-    const storedOtpData = otpStore.get("admin");
-    if (!storedOtpData) {
-      return res.status(401).json({ error: "OTP not found or expired. Please request a new OTP." });
-    }
-
-    if (Date.now() > storedOtpData.expiresAt) {
-      otpStore.delete("admin"); // Clean up expired OTP
-      return res.status(401).json({ error: "OTP has expired. Please request a new OTP." });
-    }
-
-    if (storedOtpData.otp !== otp) {
-      return res.status(401).json({ error: "Invalid OTP" });
-    }
-
-    // OTP verified, remove from store
-    otpStore.delete("admin");
-
-    res.json({
-      message: "OTP verified successfully",
-      isAdmin: true
-    });
-  } catch (err) {
-    console.error("Error verifying OTP:", err);
-    res.status(500).json({ error: "Failed to verify OTP" });
+    console.error("Error verifying password:", err);
+    res.status(500).json({ error: "Failed to verify password" });
   }
 });
 
