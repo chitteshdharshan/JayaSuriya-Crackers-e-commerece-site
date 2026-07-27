@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import "../App.css";
+import logo from "../assets/images.jpg";
 
 function Header({ cartCount }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -16,8 +17,16 @@ function Header({ cartCount }) {
       <div className="header-container">
         <Link to="/" style={{ textDecoration: 'none' }}>
           <div className="logo">
-            <h1>Jayasuriya Crackers</h1>
-            <span className="emoji" style={{ animation: 'float 3s ease-in-out infinite' }}>🎆</span>
+            <img 
+              src={logo} 
+              alt="Jayasuriya Crackers Logo" 
+              style={{ 
+                height: '55px', 
+                width: 'auto', 
+                objectFit: 'contain',
+                borderRadius: '8px'
+              }} 
+            />
           </div>
         </Link>
 
